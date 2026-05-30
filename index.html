@@ -1,235 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Indian Bike Race - Bullet Drift</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indian Bike Race - Bullet</title>
 <style>
-* { margin: 0; padding: 0; }
-body { background: #000; overflow: hidden; font-family: Arial; }
-canvas { display: block; }
-#score {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  color: #ffcc00;
-  font-size: 24px;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px #000;
-}
-#speed {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  color: #ff3300;
-  font-size: 24px;
-  font-weight: bold;
-}
-#controls {
-  position: fixed;
-  bottom: 30px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 40px;
-}
-button {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 3px solid #ffcc00;
-  background: rgba(255,165,0,0.4);
-  color: white;
-  font-size: 35px;
-  font-weight: bold;
-}
-button:active { background: rgba(255,200,0,0.8); transform: scale(0.9); }
+body{margin:0;background:#000;overflow:hidden}
+canvas{display:block}
+#score{position:absolute;top:20px;left:20px;color:#ffcc00;font:24px bold Arial;text-shadow:2px 2px 4px #000}
+#speed{position:absolute;top:20px;right:20px;color:#ff3300;font:24px bold Arial;text-shadow:2px 2px 4px #000}
+#controls{position:fixed;bottom:30px;width:100%;display:flex;justify-content:space-between;padding:0 40px}
+button{width:85px;height:85px;border-radius:50%;border:3px solid #ffcc00;background:rgba(255,165,0,0.5);color:#fff;font:32px bold Arial}
+button:active{background:rgba(255,200,0,0.8);transform:scale(0.9)}
 </style>
 </head>
 <body>
 <div id="score">Score: 0</div>
-<div id="speed">Speed: 0</div>
-<canvas id="game"></canvas>
+<div id="speed">Speed: 6</div>
+<canvas id="c"></canvas>
 <div id="controls">
-  <button id="left">◀</button>
-  <button id="right">▶</button>
+<button id="l">◀</button>
+<button id="r">▶</button>
 </div>
-
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+var c=document.getElementById('c'),x=c.getContext('2d');
+c.width=innerWidth;c.height=innerHeight;
+var bx=c.width/2,by=c.height-100,s=6,sc=0,ro=0,e=[],t=0,k={l:0,r:0};
 
-let bikeX = canvas.width / 2;
-let bikeY = canvas.height - 100;
-let speed = 6;
-let score = 0;
-let roadOffset = 0;
-let enemies = [];
-let tilt = 0;
-
-// Indian Bike बनाने का Code - Bullet Style
-function drawBike(x, y, tiltAngle) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tiltAngle * 0.08);
-
-  // Bike Body - Red Bullet
-  ctx.fillStyle = '#cc0000';
-  ctx.beginPath();
-  ctx.moveTo(-15, 30);
-  ctx.lineTo(-10, -40);
-  ctx.lineTo(10, -40);
-  ctx.lineTo(15, 30);
-  ctx.closePath();
-  ctx.fill();
-
-  // Fuel Tank
-  ctx.fillStyle = '#990000';
-  ctx.fillRect(-12, -25, 24, 18);
-
-  // Seat - Black
-  ctx.fillStyle = '#222';
-  ctx.fillRect(-14, 5, 28, 20);
-
-  // Handle
-  ctx.strokeStyle = '#444';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(-18, -42);
-  ctx.lineTo(18, -42);
-  ctx.stroke();
-
-  // Headlight
-  ctx.fillStyle = '#ffff99';
-  ctx.beginPath();
-  ctx.arc(0, -45, 8, 0, Math.PI*2);
-  ctx.fill();
-
-  // Wheels
-  ctx.fillStyle = '#111';
-  ctx.beginPath();
-  ctx.arc(0, 40, 18, 0, Math.PI*2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(0, -35, 16, 0, Math.PI*2);
-  ctx.fill();
-
-  // Rim
-  ctx.strokeStyle = '#666';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 40, 12, 0, Math.PI*2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(0, -35, 10, 0, Math.PI*2);
-  ctx.stroke();
-
-  ctx.restore();
+function bike(px,py,ang){
+x.save();x.translate(px,py);x.rotate(ang*0.08);
+x.fillStyle='#c00';x.beginPath();x.moveTo(-12,30);x.lineTo(-10,-40);x.lineTo(10,-40);x.lineTo(12,30);x.closePath();x.fill();
+x.fillStyle='#900';x.fillRect(-10,-25,20,15);
+x.fillStyle='#222';x.fillRect(-12,5,24,18);
+x.strokeStyle='#444';x.lineWidth=3;x.beginPath();x.moveTo(-15,-42);x.lineTo(15,-42);x.stroke();
+x.fillStyle='#ff9';x.beginPath();x.arc(0,-45,6,0,6.28);x.fill();
+x.fillStyle='#111';x.beginPath();x.arc(0,40,15,0,6.28);x.fill();x.beginPath();x.arc(0,-35,12,0,6.28);x.fill();
+x.strokeStyle='#666';x.lineWidth=2;x.beginPath();x.arc(0,40,10,0,6.28);x.stroke();x.beginPath();x.arc(0,-35,8,0,6.28);x.stroke();
+x.restore();
 }
 
-// Enemy - Truck/Bike
-function drawEnemy(x, y) {
-  ctx.fillStyle = '#ff6600';
-  ctx.fillRect(x-20, y-40, 40, 80);
-  ctx.fillStyle = '#333';
-  ctx.beginPath();
-  ctx.arc(x, y+30, 10, 0, Math.PI*2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x, y-30, 8, 0, Math.PI*2);
-  ctx.fill();
+function road(){
+x.fillStyle='#3a3a3a';x.fillRect(c.width/2-100,0,200,c.height);
+x.strokeStyle='yellow';x.lineWidth=5;x.setLineDash([25,25]);
+ro+=s;if(ro>50)ro=0;x.beginPath();x.moveTo(c.width/2,ro);x.lineTo(c.width/2,c.height);x.stroke();x.setLineDash([]);
 }
 
-function drawRoad() {
-  ctx.fillStyle = '#3a3a3a';
-  ctx.fillRect(canvas.width/2 - 120, 0, 240, canvas.height);
-
-  ctx.strokeStyle = 'yellow';
-  ctx.lineWidth = 6;
-  ctx.setLineDash([30, 30]);
-  roadOffset += speed;
-  if(roadOffset > 60) roadOffset = 0;
-  ctx.beginPath();
-  ctx.moveTo(canvas.width/2, roadOffset);
-  ctx.lineTo(canvas.width/2, canvas.height);
-  ctx.stroke();
-  ctx.setLineDash([]);
+function loop(){
+x.clearRect(0,0,c.width,c.height);
+road();
+if(Math.random()<0.02)e.push({x:c.width/2+(Math.random()-0.5)*140,y:-80});
+for(var i=e.length-1;i>=0;i--){
+e[i].y+=s+2;x.fillStyle='#f60';x.fillRect(e[i].x-18,e[i].y-35,36,70);
+x.fillStyle='#111';x.beginPath();x.arc(e[i].x,e[i].y+30,8,0,6.28);x.fill();x.beginPath();x.arc(e[i].x,e[i].y-30,6,0,6.28);x.fill();
+if(e[i].y>c.height+80){e.splice(i,1);sc+=10;}
+}
+if(k.l){bx-=20;t=-3;}
+if(k.r){bx+=20;t=3;}
+t*=0.85;if(bx<c.width/2-90)bx=c.width/2-90;if(bx>c.width/2+90)bx=c.width/2+90;
+bike(bx,by,t);
+document.getElementById('score').innerText='Score: '+Math.floor(sc);
+document.getElementById('speed').innerText='Speed: '+s.toFixed(1);
+for(i=0;i<e.length;i++)if(Math.abs(bx-e[i].x)<30&&Math.abs(by-e[i].y)<60){x.fillStyle='rgba(0,0,0,0.8)';x.fillRect(0,0,c.width,c.height);x.fillStyle='#ff0';x.font='bold 40px Arial';x.textAlign='center';x.fillText('CRASH!',c.width/2,c.height/2);x.font='22px Arial';x.fillText('Refresh to Restart',c.width/2,c.height/2+40);return;}
+sc+=0.1;if(Math.floor(sc)%300==0)s+=0.3;
+requestAnimationFrame(loop);
 }
 
-function spawnEnemy() {
-  if(Math.random() < 0.025) {
-    let x = canvas.width/2 + (Math.random() - 0.5) * 160;
-    enemies.push({x: x, y: -100});
-  }
-}
+document.getElementById('l').ontouchstart=()=>k.l=1;
+document.getElementById('l').ontouchend=()=>k.l=0;
+document.getElementById('r').ontouchstart=()=>k.r=1;
+document.getElementById('r').ontouchend=()=>k.r=0;
 
-function checkCollision() {
-  for(let i = enemies.length-1; i >= 0; i--) {
-    let e = enemies[i];
-    if(Math.abs(bikeX - e.x) < 35 && Math.abs(bikeY - e.y) < 70) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawRoad();
-  spawnEnemy();
-
-  for(let i = enemies.length-1; i >= 0; i--) {
-    enemies[i].y += speed + 2;
-    drawEnemy(enemies[i].x, enemies[i].y);
-    if(enemies[i].y > canvas.height + 100) {
-      enemies.splice(i, 1);
-      score += 10;
-    }
-  }
-
-  if(keys.left) tilt = -4;
-  else if(keys.right) tilt = 4;
-  else tilt *= 0.8;
-
-  drawBike(bikeX, bikeY, tilt);
-
-  document.getElementById('score').innerText = 'Score: ' + Math.floor(score);
-  document.getElementById('speed').innerText = 'Speed: ' + speed.toFixed(1) + 'x';
-
-  if(checkCollision()) {
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#ffcc00';
-    ctx.font = 'bold 45px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('CRASH!', canvas.width/2, canvas.height/2);
-    ctx.font = '25px Arial';
-    ctx.fillText('Score: ' + Math.floor(score), canvas.width/2, canvas.height/2 + 50);
-    ctx.fillText('Refresh to Restart', canvas.width/2, canvas.height/2 + 85);
-    return;
-  }
-
-  score += 0.1;
-  if(Math.floor(score) % 400 < 1) speed += 0.4;
-
-  requestAnimationFrame(gameLoop);
-}
-
-let keys = {left: false, right: false};
-document.getElementById('left').ontouchstart = () => {keys.left = true; bikeX -= 22};
-document.getElementById('left').ontouchend = () => keys.left = false;
-document.getElementById('right').ontouchstart = () => {keys.right = true; bikeX += 22};
-document.getElementById('right').ontouchend = () => keys.right = false;
-
-setInterval(() => {
-  if(bikeX < canvas.width/2 - 100) bikeX = canvas.width/2 - 100;
-  if(bikeX > canvas.width/2 + 100) bikeX = canvas.width/2 + 100;
-}, 10);
-
-window.onload = function() { gameLoop(); }
+window.onload=function(){loop()};
 </script>
 </body>
 </html>
