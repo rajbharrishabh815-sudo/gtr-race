@@ -3,11 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Nissan GTR R34 Race</title>
+<title>GTR R34 Tokyo Drift</title>
 <style>
 * { margin: 0; padding: 0; }
-body { background: #2c3e50; overflow: hidden; }
-canvas { display: block; background: #34495e; }
+body { background: #000; overflow: hidden; font-family: Arial; }
+canvas { display: block; }
+#score {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px #000;
+}
+#speed {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #ff3300;
+  font-size: 24px;
+  font-weight: bold;
+}
 #controls {
   position: fixed;
   bottom: 30px;
@@ -17,18 +34,21 @@ canvas { display: block; background: #34495e; }
   padding: 0 40px;
 }
 button {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,0.3);
+  border: 3px solid #fff;
+  background: rgba(255,50,50,0.4);
   color: white;
-  font-size: 30px;
+  font-size: 35px;
   font-weight: bold;
 }
+button:active { background: rgba(255,100,100,0.8); transform: scale(0.9); }
 </style>
 </head>
 <body>
+<div id="score">Score: 0</div>
+<div id="speed">Speed: 0</div>
 <canvas id="game"></canvas>
 <div id="controls">
   <button id="left">◀</button>
@@ -42,40 +62,33 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let carX = canvas.width / 2;
-let carY = canvas.height - 100;
-let speed = 3;
+let carY = canvas.height - 120;
+let speed = 6;
+let score = 0;
+let roadOffset = 0;
+let enemies = [];
+let drift = 0;
 
-// Car बनाने का Function
-function drawCar(x, y) {
-  ctx.fillStyle = 'red';
-  ctx.fillRect(x-25, y-50, 50, 100); // Body
-  ctx.fillStyle = 'black';
-  ctx.fillRect(x-20, y-40, 15, 20); // Window
-  ctx.fillRect(x+5, y-40, 15, 20); // Window
-  ctx.fillStyle = 'gray';
-  ctx.fillRect(x-30, y-20, 10, 40); // Wheel
-  ctx.fillRect(x+20, y-20, 10, 40); // Wheel
-}
-
-// Game Loop - यही Start करता है
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// GTR R34 Car बनाने का Code
+function drawGTR(x, y, driftAngle) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(driftAngle * 0.1);
   
-  // Road बनाओ
-  ctx.fillStyle = '#7f8c8d';
-  ctx.fillRect(canvas.width/2 - 100, 0, 200, canvas.height);
-  ctx.fillStyle = 'white';
-  ctx.fillRect(canvas.width/2 - 5, 0, 10, canvas.height);
+  // Car Body - Blue GTR
+  ctx.fillStyle = '#0066ff';
+  ctx.fillRect(-30, -60, 60, 120);
   
-  drawCar(carX, carY);
-  requestAnimationFrame(gameLoop);
-}
-
-gameLoop(); // Game Start!
-
-// Button Controls
-document.getElementById('left').ontouchstart = () => carX -= 20;
-document.getElementById('right').ontouchstart = () => carX += 20;
-</script>
-</body>
-</html>
+  // Bonnet Lines
+  ctx.strokeStyle = '#0044aa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-20, -40);
+  ctx.lineTo(-10, 40);
+  ctx.moveTo(20, -40);
+  ctx.lineTo(10, 40);
+  ctx.stroke();
+  
+  // Windows
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-22, -
