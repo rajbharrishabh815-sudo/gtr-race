@@ -3,67 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rishabh Game Zone</title>
+<title>Rishabh Game Zone - 10 Games</title>
 <style>
 body{margin:0;background:#0a0a0a;color:#fff;font-family:Arial;text-align:center}
 h1{padding:20px;background:linear-gradient(90deg,#ff00ff,#00ffff);margin:0;font-size:24px}
-.game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;padding:20px;max-width:600px;margin:auto}
-.game-box{background:#1a1a1a;border:2px solid #00ffff;border-radius:15px;padding:30px 10px;cursor:pointer;transition:0.2s}
-.game-box:hover{transform:scale(1.05);border-color:#ff00ff}
-.game-box h2{margin:10px 0 5px;font-size:18px}
-.game-box p{margin:0;font-size:12px;color:#aaa}
-iframe{width:100%;height:100vh;border:none;display:none}
-#backBtn{position:fixed;top:10px;left:10px;z-index:100;background:#ff00ff;border:none;color:#fff;padding:10px 20px;border-radius:8px;font-size:16px;display:none;cursor:pointer}
-</style>
-</head>
-<body>
-<h1>🎮 Rishabh Game Zone 🎮</h1>
-<button id="backBtn" onclick="backToMenu()">◀ Back</button>
-
-<div id="menu" class="game-grid">
-<div class="game-box" onclick="loadGame('bike')">
-<h2>🏍️ Bullet Race</h2>
-<p>Car से बचो, Score बनाओ</p>
-</div>
-<div class="game-box" onclick="loadGame('snake')">
-<h2>🐍 Snake</h2>
-<p>Apple खाओ, बड़े होते जाओ</p>
-</div>
-<div class="game-box" onclick="loadGame('flappy')">
-<h2>🐦 Flappy Bird</h2>
-<p>Pipe से बच के उड़ो</p>
-</div>
-<div class="game-box" onclick="loadGame('pong')">
-<h2>🏓 Ping Pong</h2>
-<p>Ball को मारो</p>
-</div>
-</div>
-
-<iframe id="gameFrame"></iframe>
-
-<script>
-const games = {
-bike: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>body{margin:0;overflow:hidden;background:#333}#game{width:100vw;height:100vh;position:relative;background:linear-gradient(#333 0%,#555 100%);overflow:hidden}.road{position:absolute;width:60%;left:20%;height:100%;background:#444;border-left:4px dashed #ff0;border-right:4px dashed #ff0}.bike{position:absolute;width:40px;height:60px;background:red;bottom:50px;left:50%;transform:translateX(-50%);border-radius:10px 10px 5px 5px;transition:0.1s}.car{position:absolute;width:40px;height:50px;background:orange;top:-60px;border-radius:8px}.controls{position:fixed;bottom:20px;width:100%;display:flex;justify-content:space-between;padding:0 20px;box-sizing:border-box}button{width:80px;height:80px;font-size:30px;border-radius:50%;border:none;background:#ff0}#score{position:fixed;top:10px;left:10px;color:#fff;font-size:20px}</style></head><body><div id="game"><div class="road"></div><div class="bike" id="bike"></div><div id="score">Score: 0</div><div class="controls"><button onclick="move(-20)">◀</button><button onclick="move(20)">▶</button></div></div><script>let bike=document.getElementById('bike'),score=0,gameLoop;function move(x){let p=parseInt(bike.style.left||'50%');p=Math.max(20,Math.min(80,p+x));bike.style.left=p+'%';bike.style.transform='translateX(-50%) rotate('+(x>0?15:-15)+'deg)';setTimeout(()=>bike.style.transform='translateX(-50%) rotate(0deg)',150)}function spawnCar(){let c=document.createElement('div');c.className='car';c.style.left=(20+Math.random()*60)+'%';document.getElementById('game').appendChild(c);let t=setInterval(()=>{c.style.top=parseInt(c.style.top||'-60')+5+'px';if(parseInt(c.style.top)>window.innerHeight){clearInterval(t);c.remove();score++;document.getElementById('score').innerText='Score: '+score}});setTimeout(spawnCar,1500)}spawnCar();setInterval(()=>{document.querySelectorAll('.car').forEach(c=>{let b=bike.getBoundingClientRect(),car=c.getBoundingClientRect();if(b.left<car.right&&b.right>car.left&&b.top<car.bottom&&b.bottom>car.top){alert('CRASH! Score: '+score);location.reload()}})},100)<\/script></body></html>`,
-
-snake: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>body{margin:0;background:#000;display:flex;flex-direction:column;align-items:center;color:#0f0;font-family:Arial}#c{border:2px solid #0f0;margin-top:10px}button{margin:5px;padding:15px 25px;font-size:20px;background:#0f0;border:none;color:#000}</style></head><body><h2>Snake Score: <span id="s">0</span></h2><canvas id="c" width="300" height="300"></canvas><div><button onclick="d='up'">↑</button></div><div><button onclick="d='left'">←</button><button onclick="d='right'">→</button></div><div><button onclick="d='down'">↓</button></div><script>let c=document.getElementById('c').getContext('2d'),x=150,y=150,s=20,d='right',t=[{x:150,y:150}],f={x:100,y:100},sc=0;function g(){x+=d=='right'?s:d=='left'?-s:0;y+=d=='down'?s:d=='up'?-s:0;if(x<0||x>300||y<0||y>300||t.some(p=>p.x==x&&p.y==y)){alert('Game Over! Score:'+sc);location.reload()}t.unshift({x,y});if(x==f.x&&y==f.y){sc++;document.getElementById('s').innerText=sc;f={x:Math.floor(Math.random()*15)*s,y:Math.floor(Math.random()*15)*s}}else t.pop();c.clearRect(0,0,300,300);c.fillStyle='red';c.fillRect(f.x,f.y,s);c.fillStyle='0f0';t.forEach(p=>c.fillRect(p.x,p.y,s))}setInterval(g,150)<\/script></body></html>`,
-
-flappy: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>body{margin:0;overflow:hidden;background:#70c5ce}#b{width:40px;height:40px;background:yellow;border-radius:50%;position:absolute;left:100px;top:200px}#p{position:absolute;width:60px;background:green}</style></head><body onclick="v=-8"><div id="b"></div><div id="score" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);font-size:40px;color:#fff">0</div><script>let b=document.getElementById('b'),y=200,v=0,sc=0,pipes=[];function pipe(){let h=Math.random()*300+50,p1=document.createElement('div'),p2=document.createElement('div');p1.id=p2.id='p';p1.style.height=h+'px';p1.style.top='0px';p1.style.left='400px';p2.style.height=(500-h-120)+'px';p2.style.top=(h+120)+'px';p2.style.left='400px';document.body.appendChild(p1);document.body.appendChild(p2);pipes.push([p1,p2]);setTimeout(pipe,1500)}pipe();setInterval(()=>{v+=0.4;y+=v;b.style.top=y+'px';pipes.forEach(([p1,p2])=>{let x=parseInt(p1.style.left)-3;p1.style.left=p2.style.left=x+'px';if(x<-60){p1.remove();p2.remove();pipes.shift();sc++;document.getElementById('score').innerText=sc}let br=b.getBoundingClientRect(),p1r=p1.getBoundingClientRect(),p2r=p2.getBoundingClientRect();if(br.left<p1r.right&&br.right>p1r.left&&(br.top<p1r.bottom||br.bottom>p2r.top)){alert('Game Over! Score:'+sc);location.reload()}});if(y>500||y<0){alert('Game Over! Score:'+sc);location.reload()}},20)<\/script></body></html>`,
-
-pong: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>body{margin:0;background:#000;overflow:hidden}#p1,#p2{width:15px;height:100px;background:#fff;position:absolute}#b{width:15px;height:15px;background:#fff;border-radius:50%;position:absolute}</style></head><body><div id="p1" style="left:20px;top:200px"></div><div id="p2" style="right:20px;top:200px"></div><div id="b" style="left:250px;top:250px"></div><script>let p1y=200,p2y=200,bx=250,by=250,bvx=3,bvy=2;document.body.ontouchmove=e=>{p1y=e.touches[0].clientY-50;document.getElementById('p1').style.top=p1y+'px'};setInterval(()=>{bx+=bvx;by+=bvy;if(by<0||by>500)bvy*=-1;let p2=document.getElementById('p2');p2y+=by>p2y+50?2:-2;p2.style.top=p2y+'px';let b=document.getElementById('b'),p1=document.getElementById('p1');b.style.left=bx+'px';b.style.top=by+'px';if(bx<35&&by>p1y&&by<p1y+100)bvx*=-1;if(bx>485&&by>p2y&&by<p2y+100)bvx*=-1;if(bx<0||bx>500){bx=250;by=250;bvx*=-1}},20)<\/script></body></html>`
-};
-
-function loadGame(name){
-document.getElementById('menu').style.display='none';
-document.getElementById('backBtn').style.display='block';
-document.getElementById('gameFrame').style.display='block';
-document.getElementById('gameFrame').srcdoc=games[name];
-}
-
-function backToMenu(){
-document.getElementById('menu').style.display='grid';
-document.getElementById('backBtn').style.display='none';
-document.getElementById('gameFrame').style.display='none';
-}
-</script>
-</body>
-</html>
+.game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;padding:20px;max-width:700px;margin:auto}
+.game-box{background:#1a1a1a;border:2px solid #00ffff;border-radius:15px;padding:25px 10px;cursor:pointer;transition:0.2s}
+.game-box:hover{
