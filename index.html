@@ -1,37 +1,121 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rishabh Game Zone</title>
+<title>Runner Game</title>
 <style>
-body{margin:0;background:#0a0a0a;color:#fff;font-family:Arial;text-align:center}
-h1{padding:20px;background:linear-gradient(90deg,#ff00ff,#00ffff);margin:0;font-size:22px}
-.game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;padding:20px;max-width:600px;margin:auto}
-.game-box{background:#1a1a1a;border:2px solid #00ffff;border-radius:15px;padding:30px 10px;cursor:pointer}
-.game-box:hover{transform:scale(1.05);border-color:#ff00ff}
-iframe{width:100%;height:100vh;border:none;display:none}
-#backBtn{position:fixed;top:10px;left:10px;z-index:100;background:#ff00ff;border:none;color:#fff;padding:10px 20px;border-radius:8px;display:none}
+body{
+    margin:0;
+    overflow:hidden;
+    background:#87CEEB;
+}
+canvas{
+    display:block;
+    margin:auto;
+    background:#90EE90;
+}
 </style>
 </head>
 <body>
-<h1>🎮 Rishabh Game Zone 🎮</h1>
-<button id="backBtn" onclick="backToMenu()">◀ Back</button>
 
-<div id="menu" class="game-grid">
-<div class="game-box" onclick="loadGame('snake')"><h2>🐍 Snake</h2><p>Apple खाओ</p></div>
-<div class="game-box" onclick="loadGame('flappy')"><h2>🐦 Flappy Bird</h2><p>Tap करके उड़ो</p></div>
-<div class="game-box" onclick="loadGame('tictac')"><h2>❌⭕ Tic Tac Toe</h2><p>X vs O</p></div>
-<div class="game-box" onclick="loadGame('rps')"><h2>✊ Rock Paper</h2><p>Computer हराओ</p></div>
-<div class="game-box" onclick="loadGame('dino')"><h2>🦖 Dino Run</h2><p>Tap करके कूदो</p></div>
-</div>
-
-<iframe id="gameFrame"></iframe>
+<canvas id="game" width="800" height="400"></canvas>
 
 <script>
-const games = {
-snake: `<html><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;color:#0f0"><h2>Snake</h2><canvas id="c" width="300" height="300" style="border:2px solid #0f0"></canvas><div><button onclick="d='up'">↑</button></div><div><button onclick="d='left'">←</button><button onclick="d='right'">→</button></div><div><button onclick="d='down'">↓</button></div><script>let c=document.getElementById('c').getContext('2d'),x=150,y=150,s=20,d='right',t=[{x:150,y:150}],f={x:100,y:100};function g(){x+=d=='right'?s:d=='left'?-s:0;y+=d=='down'?s:d=='up'?-s:0;if(x<0||x>300||y<0||y>300||t.some(p=>p.x==x&&p.y==y)){alert('Game Over');location.reload()}t.unshift({x,y});if(x==f.x&&y==f.y){f={x:Math.floor(Math.random()*15)*s,y:Math.floor(Math.random()*15)*s}}else t.pop();c.clearRect(0,0,300,300);c.fillStyle='red';c.fillRect(f.x,f.y,s);c.fillStyle='#0f0';t.forEach(p=>c.fillRect(p.x,p.y,s))}setInterval(g,150)<\/script></body></html>`,
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-flappy: `<html><body onclick="v=-8" style="margin:0;overflow:hidden;background:#70c5ce"><div id="b" style="width:40px;height:40px;background:yellow;border-radius:50%;position:absolute;left:100px;top:200px"></div><div id="score" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);font-size:40px;color:#fff">0</div><script>let b=document.getElementById('b'),y=200,v=0,sc=0,pipes=[];function pipe(){let h=Math.random()*200+50,p1=document.createElement('div'),p2=document.createElement('div');p1.style.cssText=p2.style.cssText='position:absolute;width:60px;background:green';p1.style.height=h+'px';p1.style.top='0px';p1.style.left='400px';p2.style.height=(400-h-120)+'px';p2.style.top=(h+120)+'px';p2.style.left='400px';document.body.appendChild(p1);document.body.appendChild(p2);pipes.push([p1,p2]);setTimeout(pipe,1500)}pipe();setInterval(()=>{v+=0.4;y+=v;b.style.top=y+'px';pipes.forEach(([p1,p2])=>{let x=parseInt(p1.style.left)-3;p1.style.left=p2.style.left=x+'px';if(x<-60){p1.remove();p2.remove();pipes.shift();sc++;document.getElementById('score').innerText=sc}let br=b.getBoundingClientRect(),p1r=p1.getBoundingClientRect(),p2r=p2.getBoundingClientRect();if(br.left<p1r.right&&br.right>p1r.left&&(br.top<p1r.bottom||br.bottom>p2r.top)){alert('Game Over! Score:'+sc);location.reload()}});if(y>500||y<0){alert('Game Over! Score:'+sc);location.reload()}},20)<\/script></body></html>`,
+let player = {
+    x:100,
+    y:300,
+    w:40,
+    h:40,
+    dy:0,
+    jumping:false
+};
 
-tictac: `<html><body style="margin:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:Arial"><h2>Tic Tac Toe</h2><div style="display:grid;grid-template-columns:repeat(3,100px);gap:5px" id="board"></div><div id="msg" style="margin-top:20px">तू X है</div><script>let board=['','',''],gameOver=false;
+let obstacles = [];
+let score = 0;
+let gameOver = false;
+
+document.addEventListener("keydown", e=>{
+    if(e.code==="Space" && !player.jumping){
+        player.dy = -12;
+        player.jumping = true;
+    }
+});
+
+function spawnObstacle(){
+    obstacles.push({
+        x:800,
+        y:320,
+        w:30,
+        h:50
+    });
+}
+
+setInterval(spawnObstacle,1500);
+
+function update(){
+    if(gameOver) return;
+
+    player.dy += 0.6;
+    player.y += player.dy;
+
+    if(player.y >= 300){
+        player.y = 300;
+        player.dy = 0;
+        player.jumping = false;
+    }
+
+    obstacles.forEach(ob=>{
+        ob.x -= 6;
+
+        if(
+            player.x < ob.x + ob.w &&
+            player.x + player.w > ob.x &&
+            player.y < ob.y + ob.h &&
+            player.y + player.h > ob.y
+        ){
+            gameOver = true;
+        }
+    });
+
+    obstacles = obstacles.filter(ob=>ob.x>-50);
+
+    score++;
+}
+
+function draw(){
+    ctx.clearRect(0,0,800,400);
+
+    ctx.fillStyle="brown";
+    ctx.fillRect(0,350,800,50);
+
+    ctx.fillStyle="blue";
+    ctx.fillRect(player.x,player.y,player.w,player.h);
+
+    ctx.fillStyle="red";
+    obstacles.forEach(ob=>{
+        ctx.fillRect(ob.x,ob.y,ob.w,ob.h);
+    });
+
+    ctx.fillStyle="black";
+    ctx.font="24px Arial";
+    ctx.fillText("Score: "+score,20,40);
+
+    if(gameOver){
+        ctx.font="40px Arial";
+        ctx.fillText("GAME OVER",280,200);
+    }
+}
+
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
