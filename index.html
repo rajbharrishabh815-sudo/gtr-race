@@ -1,127 +1,26 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bubble Shooter Car</title>
-<style>
-body{margin:0;background:black;color:white;text-align:center;}
-canvas{background:#222;display:block;margin:auto;}
-button{width:90px;height:50px;font-size:20px;margin:5px;}
-</style>
-</head>
-<body>
+<h1>🎮 My Game Hub</h1>
 
-<h3>🚗 Bubble Shooter Car</h3>
+<button onclick="openGame('car')">
+🚗 Car Shooter
+</button>
 
-<canvas id="game" width="420" height="700"></canvas>
+<button onclick="openGame('space')">
+🚀 Space Shooter
+</button>
 
-<div>
-<button id="left">⬅️</button>
-<button id="fire">🔫</button>
-<button id="right">➡️</button>
-</div>
+<button onclick="openGame('snake')">
+🐍 Snake
+</button>
+
+<button onclick="openGame('runner')">
+🏃 Runner
+</button>
+
+<div id="gameArea"></div>
 
 <script>
-const c=document.getElementById("game");
-const ctx=c.getContext("2d");
-
-const lanes=[20,85,150,215,280,345];
-let lane=2;
-let score=0;
-
-let bullets=[];
-let bubbles=[];
-
-setInterval(()=>{
-bubbles.push({
-x:lanes[Math.floor(Math.random()*6)]+20,
-y:-20,
-r:15
-});
-},1000);
-
-document.getElementById("left").onclick=()=>{
-if(lane>0) lane--;
-};
-
-document.getElementById("right").onclick=()=>{
-if(lane<5) lane++;
-};
-
-document.getElementById("fire").onclick=()=>{
-bullets.push({
-x:lanes[lane]+30,
-y:600
-});
-};
-
-function draw(){
-
-ctx.clearRect(0,0,420,700);
-
-for(let i=1;i<6;i++){
-ctx.strokeStyle="white";
-ctx.beginPath();
-ctx.moveTo(i*70,0);
-ctx.lineTo(i*70,700);
-ctx.stroke();
+function openGame(name){
+  document.getElementById("gameArea").innerHTML =
+  "Game: " + name;
 }
-
-let carX=lanes[lane];
-
-ctx.fillStyle="cyan";
-ctx.fillRect(carX,620,60,60);
-
-for(let i=0;i<bullets.length;i++){
-bullets[i].y-=8;
-ctx.fillStyle="yellow";
-ctx.fillRect(bullets[i].x,bullets[i].y,5,15);
-}
-
-for(let i=0;i<bubbles.length;i++){
-
-bubbles[i].y+=3;
-
-ctx.fillStyle="red";
-ctx.beginPath();
-ctx.arc(bubbles[i].x,bubbles[i].y,
-bubbles[i].r,0,Math.PI*2);
-ctx.fill();
-
-if(
-bubbles[i].y>620 &&
-Math.abs(bubbles[i].x-(carX+30))<35
-){
-alert("Game Over\nScore: "+score);
-location.reload();
-}
-
-for(let j=0;j<bullets.length;j++){
-
-let dx=bubbles[i].x-bullets[j].x;
-let dy=bubbles[i].y-bullets[j].y;
-
-if(Math.sqrt(dx*dx+dy*dy)<20){
-
-bubbles.splice(i,1);
-bullets.splice(j,1);
-
-score++;
-break;
-}
-}
-}
-
-ctx.fillStyle="white";
-ctx.font="20px Arial";
-ctx.fillText("Score: "+score,10,25);
-
-requestAnimationFrame(draw);
-}
-
-draw();
 </script>
-
-</body>
-</html>
