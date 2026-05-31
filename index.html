@@ -3,191 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>3D Car Racing</title>
-
+<title>Bubble Shooter Car</title>
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:black;
-font-family:Arial;
-color:white;
-text-align:center;
-}
-#menu,#gameOver{
-position:absolute;
-width:100%;
-top:35%;
-}
-button{
-padding:15px 30px;
-font-size:20px;
-border:none;
-border-radius:10px;
-}
-canvas{
-display:none;
-background:skyblue;
-}
-#info{
-position:absolute;
-top:10px;
-left:10px;
-font-size:18px;
-}
+body{margin:0;background:black;color:white;text-align:center;}
+canvas{background:#222;display:block;margin:auto;}
+button{width:90px;height:50px;font-size:20px;margin:5px;}
 </style>
 </head>
 <body>
 
-<div id="menu">
-<h1>🏎️ 3D Car Racing</h1>
-<p>⬅️ Left = Baayi taraf<br>➡️ Right = Daayi taraf</p>
-<button onclick="startGame()">START</button>
-</div>
+<h3>🚗 Bubble Shooter Car</h3>
 
-<div id="info"></div>
+<canvas id="game" width="420" height="700"></canvas>
 
-<canvas id="game" width="400" height="700"></canvas>
-
-<div id="gameOver" style="display:none">
-<h1>GAME OVER</h1>
-<p id="finalScore"></p>
-<button onclick="location.reload()">PLAY AGAIN</button>
+<div>
+<button id="left">⬅️</button>
+<button id="fire">🔫</button>
+<button id="right">➡️</button>
 </div>
 
 <script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
 
+const lanes=[20,85,150,215,280,345];
+let lane=2;
 let score=0;
-let running=false;
 
-let player={
-lane:1,
-y:580,
-w:60,
-h:100
-};
-
-let enemies=[];
-
-function startGame(){
-document.getElementById("menu").style.display="none";
-canvas.style.display="block";
-running=true;
+let bullets=[];
+let bubbles=[];
 
 setInterval(()=>{
-if(running){
-enemies.push({
-lane:Math.floor(Math.random()*3),
-y:-120
+bubbles.push({
+x:lanes[Math.floor(Math.random()*6)]+20,
+y:-20,
+r:15
 });
-}
-},1200);
+},1000);
 
-gameLoop();
-}
+document.getElementById("left").onclick=()=>{
+if(lane>0) lane--;
+};
 
-document.addEventListener("keydown",e=>{
-if(e.key==="ArrowLeft" && player.lane>0){
-player.lane--;
-}
-if(e.key==="ArrowRight" && player.lane<2){
-player.lane++;
-}
+document.getElementById("right").onclick=()=>{
+if(lane<5) lane++;
+};
+
+document.getElementById("fire").onclick=()=>{
+bullets.push({
+x:lanes[lane]+30,
+y:600
 });
+};
 
-function laneX(lane){
-return [90,170,250][lane];
-}
+function draw(){
 
-function drawRoad(){
-ctx.fillStyle="green";
-ctx.fillRect(0,0,400,700);
+ctx.clearRect(0,0,420,700);
 
-ctx.fillStyle="#555";
-ctx.beginPath();
-ctx.moveTo(50,700);
-ctx.lineTo(350,700);
-ctx.lineTo(250,0);
-ctx.lineTo(150,0);
-ctx.fill();
-
+for(let i=1;i<6;i++){
 ctx.strokeStyle="white";
-ctx.lineWidth=4;
-
-for(let i=0;i<20;i++){
-let y=(i*50 + score*5)%700;
 ctx.beginPath();
-ctx.moveTo(200,y);
-ctx.lineTo(200,y+25);
+ctx.moveTo(i*70,0);
+ctx.lineTo(i*70,700);
 ctx.stroke();
 }
+
+let carX=lanes[lane];
+
+ctx.fillStyle="cyan";
+ctx.fillRect(carX,620,60,60);
+
+for(let i=0;i<bullets.length;i++){
+bullets[i].y-=8;
+ctx.fillStyle="yellow";
+ctx.fillRect(bullets[i].x,bullets[i].y,5,15);
 }
 
-function drawPlayer(){
-let x=laneX(player.lane);
+for(let i=0;i<bubbles.length;i++){
 
-ctx.fillStyle="blue";
-ctx.fillRect(x,player.y,player.w,player.h);
-
-ctx.fillStyle="white";
-ctx.fillRect(x+10,player.y+10,15,20);
-ctx.fillRect(x+35,player.y+10,15,20);
-}
-
-function drawEnemies(){
-
-for(let i=0;i<enemies.length;i++){
-
-let e=enemies[i];
-
-e.y+=7;
-
-let x=laneX(e.lane);
+bubbles[i].y+=3;
 
 ctx.fillStyle="red";
-ctx.fillRect(x,e.y,60,100);
+ctx.beginPath();
+ctx.arc(bubbles[i].x,bubbles[i].y,
+bubbles[i].r,0,Math.PI*2);
+ctx.fill();
 
 if(
-x < laneX(player.lane)+60 &&
-x+60 > laneX(player.lane) &&
-e.y < player.y+100 &&
-e.y+100 > player.y
+bubbles[i].y>620 &&
+Math.abs(bubbles[i].x-(carX+30))<35
 ){
-gameOver();
+alert("Game Over\nScore: "+score);
+location.reload();
 }
 
-if(e.y>750){
-enemies.splice(i,1);
+for(let j=0;j<bullets.length;j++){
+
+let dx=bubbles[i].x-bullets[j].x;
+let dy=bubbles[i].y-bullets[j].y;
+
+if(Math.sqrt(dx*dx+dy*dy)<20){
+
+bubbles.splice(i,1);
+bullets.splice(j,1);
+
 score++;
+break;
 }
 }
 }
 
-function gameOver(){
-running=false;
-canvas.style.display="none";
-document.getElementById("gameOver").style.display="block";
-document.getElementById("finalScore").innerText=
-"Score: "+score;
+ctx.fillStyle="white";
+ctx.font="20px Arial";
+ctx.fillText("Score: "+score,10,25);
+
+requestAnimationFrame(draw);
 }
 
-function gameLoop(){
-
-if(!running) return;
-
-ctx.clearRect(0,0,400,700);
-
-drawRoad();
-drawPlayer();
-drawEnemies();
-
-document.getElementById("info").innerHTML=
-"Score: "+score+"<br>⬅️ Left | ➡️ Right";
-
-requestAnimationFrame(gameLoop);
-}
+draw();
 </script>
 
 </body>
