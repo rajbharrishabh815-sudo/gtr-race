@@ -1,121 +1,182 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<title>Runner Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Click Speed Master</title>
+<meta name="description" content="10 Second में कितने Click कर सकते हो? Record तोड़ो!">
+<link rel="manifest" href="manifest.json">
 <style>
-body{
-    margin:0;
-    overflow:hidden;
-    background:#87CEEB;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    user-select: none;
 }
-canvas{
-    display:block;
-    margin:auto;
-    background:#90EE90;
+.container {
+    text-align: center;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+}
+h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+.stats {
+    background: rgba(255,255,255,0.2);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-around;
+}
+.stat-box h2 { font-size: 24px; }
+.stat-box p { font-size: 12px; opacity: 0.8; }
+.click-btn {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #ff6b6b, #ff8e53);
+    border: none;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+    margin: 20px auto;
+    display: block;
+}
+.click-btn:active {
+    transform: scale(0.95);
+}
+.click-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+.start-btn {
+    background: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 40px;
+    font-size: 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+.result {
+    font-size: 20px;
+    margin-top: 20px;
+    min-height: 30px;
 }
 </style>
 </head>
 <body>
+<div class="container">
+    <h1>⚡ Click Speed Master ⚡</h1>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <h2 id="time">10</h2>
+            <p>Time</p>
+        </div>
+        <div class="stat-box">
+            <h2 id="clicks">0</h2>
+            <p>Clicks</p>
+        </div>
+        <div class="stat-box">
+            <h2 id="cps">0.0</h2>
+            <p>CPS</p>
+        </div>
+    </div>
 
-<canvas id="game" width="800" height="400"></canvas>
+    <button class="click-btn" id="clickBtn" disabled>TAP!</button>
+    
+    <button class="start-btn" id="startBtn">Game Start करो</button>
+    
+    <div class="result" id="result"></div>
+</div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+let clicks = 0;
+let timeLeft = 10;
+let gameActive = false;
+let timer;
 
-let player = {
-    x:100,
-    y:300,
-    w:40,
-    h:40,
-    dy:0,
-    jumping:false
-};
+const clickBtn = document.getElementById('clickBtn');
+const startBtn = document.getElementById('startBtn');
+const timeEl = document.getElementById('time');
+const clicksEl = document.getElementById('clicks');
+const cpsEl = document.getElementById('cps');
+const resultEl = document.getElementById('result');
 
-let obstacles = [];
-let score = 0;
-let gameOver = false;
+function startGame() {
+    clicks = 0;
+    timeLeft = 10;
+    gameActive = true;
+    
+    clicksEl.textContent = '0';
+    timeEl.textContent = '10';
+    cpsEl.textContent = '0.0';
+    resultEl.textContent = '';
+    
+    startBtn.style.display = 'none';
+    clickBtn.disabled = false;
+    
+    timer = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = timeLeft;
+        
+        if(timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
+}
 
-document.addEventListener("keydown", e=>{
-    if(e.code==="Space" && !player.jumping){
-        player.dy = -12;
-        player.jumping = true;
+function endGame() {
+    gameActive = false;
+    clearInterval(timer);
+    clickBtn.disabled = true;
+    
+    const cps = (clicks / 10).toFixed(1);
+    cpsEl.textContent = cps;
+    
+    let msg = `Game Over! Total Clicks: ${clicks}, CPS: ${cps}`;
+    if(clicks > 80) msg = `🔥 LEGEND! ${clicks} Clicks! CPS: ${cps}`;
+    else if(clicks > 60) msg = `⚡ PRO! ${clicks} Clicks! CPS: ${cps}`;
+    else if(clicks > 40) msg = `💪 Good! ${clicks} Clicks! CPS: ${cps}`;
+    
+    resultEl.textContent = msg;
+    startBtn.style.display = 'inline-block';
+    startBtn.textContent = 'फिर से खेलो';
+}
+
+clickBtn.addEventListener('click', () => {
+    if(gameActive) {
+        clicks++;
+        clicksEl.textContent = clicks;
+        const cps = (clicks / (10 - timeLeft + 1)).toFixed(1);
+        cpsEl.textContent = cps;
+        
+        // Vibration for mobile
+        if(navigator.vibrate) navigator.vibrate(50);
     }
 });
 
-function spawnObstacle(){
-    obstacles.push({
-        x:800,
-        y:320,
-        w:30,
-        h:50
-    });
+startBtn.addEventListener('click', startGame);
+
+// PWA Install prompt
+if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
 }
-
-setInterval(spawnObstacle,1500);
-
-function update(){
-    if(gameOver) return;
-
-    player.dy += 0.6;
-    player.y += player.dy;
-
-    if(player.y >= 300){
-        player.y = 300;
-        player.dy = 0;
-        player.jumping = false;
-    }
-
-    obstacles.forEach(ob=>{
-        ob.x -= 6;
-
-        if(
-            player.x < ob.x + ob.w &&
-            player.x + player.w > ob.x &&
-            player.y < ob.y + ob.h &&
-            player.y + player.h > ob.y
-        ){
-            gameOver = true;
-        }
-    });
-
-    obstacles = obstacles.filter(ob=>ob.x>-50);
-
-    score++;
-}
-
-function draw(){
-    ctx.clearRect(0,0,800,400);
-
-    ctx.fillStyle="brown";
-    ctx.fillRect(0,350,800,50);
-
-    ctx.fillStyle="blue";
-    ctx.fillRect(player.x,player.y,player.w,player.h);
-
-    ctx.fillStyle="red";
-    obstacles.forEach(ob=>{
-        ctx.fillRect(ob.x,ob.y,ob.w,ob.h);
-    });
-
-    ctx.fillStyle="black";
-    ctx.font="24px Arial";
-    ctx.fillText("Score: "+score,20,40);
-
-    if(gameOver){
-        ctx.font="40px Arial";
-        ctx.fillText("GAME OVER",280,200);
-    }
-}
-
-function loop(){
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-loop();
 </script>
-
 </body>
 </html>
