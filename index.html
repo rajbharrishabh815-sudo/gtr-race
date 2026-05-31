@@ -3,179 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Click Speed Master</title>
-<meta name="description" content="10 Second में कितने Click कर सकते हो? Record तोड़ो!">
-<link rel="manifest" href="manifest.json">
+<title>Battle Master Pro</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    user-select: none;
-}
-.container {
-    text-align: center;
-    padding: 20px;
-    max-width: 400px;
-    width: 90%;
-}
-h1 {
-    font-size: 28px;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
-.stats {
-    background: rgba(255,255,255,0.2);
-    border-radius: 15px;
-    padding: 15px;
-    margin: 20px 0;
-    display: flex;
-    justify-content: space-around;
-}
-.stat-box h2 { font-size: 24px; }
-.stat-box p { font-size: 12px; opacity: 0.8; }
-.click-btn {
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #ff6b6b, #ff8e53);
-    border: none;
-    color: white;
-    font-size: 32px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    transition: transform 0.1s;
-    margin: 20px auto;
-    display: block;
-}
-.click-btn:active {
-    transform: scale(0.95);
-}
-.click-btn:disabled {
-    background: #666;
-    cursor: not-allowed;
-}
-.start-btn {
-    background: #4CAF50;
-    border: none;
-    color: white;
-    padding: 15px 40px;
-    font-size: 18px;
-    border-radius: 25px;
-    cursor: pointer;
-    margin-top: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-.result {
-    font-size: 20px;
-    margin-top: 20px;
-    min-height: 30px;
-}
+body {margin:0; background:linear-gradient(135deg, #1a1a2e, #16213e); font-family:sans-serif; color:white; overflow:hidden}
+#game {display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh}
+#top {width:90%; display:flex; justify-content:space-between; font-size:18px; font-weight:bold; margin-bottom:20px}
+#arena {width:90%; height:300px; background:#0f0f23; border:3px solid orange; border-radius:20px; position:relative; overflow:hidden}
+.enemy {width:60px; height:60px; background:red; border-radius:50%; position:absolute; cursor:pointer; box-shadow:0 0 20px red; animation:pulse 0.5s infinite}
+@keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.1)}}
+#btn {width:150px; height:150px; background:orange; border-radius:50%; border:none; font-size:22px; font-weight:bold; color:white; margin-top:30px; box-shadow:0 10px 30px rgba(255,165,0,0.5)}
+#btn:active {transform:scale(0.9)}
+#msg {margin-top:15px; font-size:16px; text-align:center}
 </style>
 </head>
 <body>
-<div class="container">
-    <h1>⚡ Click Speed Master ⚡</h1>
-    
-    <div class="stats">
-        <div class="stat-box">
-            <h2 id="time">10</h2>
-            <p>Time</p>
-        </div>
-        <div class="stat-box">
-            <h2 id="clicks">0</h2>
-            <p>Clicks</p>
-        </div>
-        <div class="stat-box">
-            <h2 id="cps">0.0</h2>
-            <p>CPS</p>
-        </div>
-    </div>
-
-    <button class="click-btn" id="clickBtn" disabled>TAP!</button>
-    
-    <button class="start-btn" id="startBtn">Game Start करो</button>
-    
-    <div class="result" id="result"></div>
+<div id="game">
+  <div id="top">
+    <span>Level: <span id="level">1</span>/5</span>
+    <span>Score: <span id="score">0</span></span>
+    <span>Health: <span id="health">100</span></span>
+  </div>
+  <div id="arena"></div>
+  <button id="btn">FIRE!</button>
+  <div id="msg">Enemy को Tap करके मारो!</div>
 </div>
 
 <script>
-let clicks = 0;
-let timeLeft = 10;
-let gameActive = false;
-let timer;
+let level = 1, score = 0, health = 100, enemies = 0, killed = 0;
+const arena = document.getElementById('arena');
+const levelEl = document.getElementById('level');
+const scoreEl = document.getElementById('score');
+const healthEl = document.getElementById('health');
+const msg = document.getElementById('msg');
+const btn = document.getElementById('btn');
 
-const clickBtn = document.getElementById('clickBtn');
-const startBtn = document.getElementById('startBtn');
-const timeEl = document.getElementById('time');
-const clicksEl = document.getElementById('clicks');
-const cpsEl = document.getElementById('cps');
-const resultEl = document.getElementById('result');
-
-function startGame() {
-    clicks = 0;
-    timeLeft = 10;
-    gameActive = true;
-    
-    clicksEl.textContent = '0';
-    timeEl.textContent = '10';
-    cpsEl.textContent = '0.0';
-    resultEl.textContent = '';
-    
-    startBtn.style.display = 'none';
-    clickBtn.disabled = false;
-    
-    timer = setInterval(() => {
-        timeLeft--;
-        timeEl.textContent = timeLeft;
-        
-        if(timeLeft <= 0) {
-            endGame();
-        }
-    }, 1000);
+function startLevel() {
+  arena.innerHTML = '';
+  enemies = level * 3; // Level 1=3, Level 2=6 Enemy
+  killed = 0;
+  msg.innerHTML = `Level ${level} - ${enemies} Enemy मारो!`;
+  spawnEnemy();
 }
 
-function endGame() {
-    gameActive = false;
-    clearInterval(timer);
-    clickBtn.disabled = true;
-    
-    const cps = (clicks / 10).toFixed(1);
-    cpsEl.textContent = cps;
-    
-    let msg = `Game Over! Total Clicks: ${clicks}, CPS: ${cps}`;
-    if(clicks > 80) msg = `🔥 LEGEND! ${clicks} Clicks! CPS: ${cps}`;
-    else if(clicks > 60) msg = `⚡ PRO! ${clicks} Clicks! CPS: ${cps}`;
-    else if(clicks > 40) msg = `💪 Good! ${clicks} Clicks! CPS: ${cps}`;
-    
-    resultEl.textContent = msg;
-    startBtn.style.display = 'inline-block';
-    startBtn.textContent = 'फिर से खेलो';
-}
-
-clickBtn.addEventListener('click', () => {
-    if(gameActive) {
-        clicks++;
-        clicksEl.textContent = clicks;
-        const cps = (clicks / (10 - timeLeft + 1)).toFixed(1);
-        cpsEl.textContent = cps;
-        
-        // Vibration for mobile
-        if(navigator.vibrate) navigator.vibrate(50);
+function spawnEnemy() {
+  if(killed >= enemies) {
+    if(level < 5) {
+      level++; levelEl.innerHTML = level;
+      msg.innerHTML = `Level ${level-1} Complete! Next Level...`;
+      setTimeout(startLevel, 2000);
+    } else {
+      msg.innerHTML = `🎉 Game Complete! Final Score: ${score}`;
+      btn.disabled = true;
     }
-});
+    return;
+  }
+  
+  let e = document.createElement('div');
+  e.className = 'enemy';
+  e.style.left = Math.random() * (arena.offsetWidth - 60) + 'px';
+  e.style.top = Math.random() * (arena.offsetHeight - 60) + 'px';
+  e.onclick = () => {
+    score += 10 * level;
+    killed++;
+    scoreEl.innerHTML = score;
+    e.remove();
+    setTimeout(spawnEnemy, 800);
+  };
+  arena.appendChild(e);
+  
+  setTimeout(() => {
+    if(e.parentNode) {
+      e.remove();
+      health -= 10;
+      healthEl.innerHTML = health;
+      if(health <= 0) {
+        msg.innerHTML = `Game Over! Score: ${score}`;
+        btn.disabled = true;
+      } else {
+        spawnEnemy();
+      }
+    }
+  }, 3000 - level*300); // Level बढ़ेगा तो Enemy जल्दी गायब
+}
 
-startBtn.addEventListener('click', startGame);
-
-// PWA Install prompt
-if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+btn.onclick = () => {
+  if(level == 1 && killed == 0) startLevel();
 }
 </script>
 </body>
