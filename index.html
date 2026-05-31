@@ -3,327 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Battle Master Pro - Ultimate</title>
+<title>GTR Race</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;touch-action:none}
-body{background:#000;color:#fff;font-family:Arial;overflow:hidden}
-#game{width:100vw;height:100vh;position:relative;background:radial-gradient(circle at 50% 30%,#1a1a3e 0%,#0a0a0f 100%)}
-.screen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.hide{display:none}
-h1{font-size:36px;margin-bottom:25px;color:#ff6600;text-shadow:0 0 25px #ff6600,0 0 50px #ff3300}
-h2{font-size:24px;margin:15px;color:#00ff88}
-.btn{background:linear-gradient(135deg,#ff6600,#ff3300);border:none;color:#fff;padding:16px 45px;font-size:18px;border-radius:12px;margin:12px;cursor:pointer;box-shadow:0 6px 20px rgba(255,102,0,0.5);font-weight:bold}
-.btn:active{transform:scale(0.92)}
-.btn2{background:linear-gradient(135deg,#00aaff,#0066cc)}
-#hud{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:space-around;padding:0 10px;z-index:10;flex-wrap:wrap}
-.hud-box{background:rgba(0,0,0,0.8);padding:10px 12px;border-radius:10px;font-size:15px;border:2px solid #ff6600;margin:3px;min-width:80px;text-align:center}
-.health-bar{width:100px;height:10px;background:#333;border-radius:5px;overflow:hidden;margin-top:5px}
-.health-fill{height:100%;background:linear-gradient(90deg,#00ff00,#ff6600);width:100%;transition:0.3s}
-#canvas{width:100%;height:100%}
-.gun{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);width:50px;height:90px;background:linear-gradient(180deg,#666,#222);border-radius:12px;border:4px solid #ff6600;z-index:5;box-shadow:0 0 20px #ff6600}
-.bullet{position:absolute;width:8px;height:18px;background:yellow;border-radius:4px;box-shadow:0 0 15px yellow}
-.enemy{position:absolute;width:55px;height:55px;border-radius:50%;background:radial-gradient(circle,red,#800);border:3px solid #fff;box-shadow:0 0 15px red}
-.boss{width:100px;height:100px;border:5px solid gold;background:radial-gradient(circle,purple,#300)}
-.coin{position:absolute;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,gold,#daa520);border:3px solid #fff;box-shadow:0 0 10px gold}
-.explosion{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,orange,red,yellow);animation:boom 0.4s}
-@keyframes boom{0%{transform:scale(0)}50%{transform:scale(1.5)}100%{transform:scale(2.5);opacity:0}}
-#levelText{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);font-size:60px;color:#ff6600;display:none;z-index:20;text-shadow:0 0 30px #ff6600}
-.pause-btn{position:absolute;top:15px;right:15px;background:rgba(255,255,255,0.2);border:2px solid #fff;padding:8px 15px;border-radius:8px;z-index:15;font-size:18px}
-.stars{position:absolute;width:2px;height:2px;background:white;border-radius:50%;animation:twinkle 3s infinite}
-@keyframes twinkle{0%,100%{opacity:0.3}50%{opacity:1}}
+  body {margin:0; padding:0; overflow:hidden; background:#000; font-family:Arial;}
+  canvas {display:block; background:linear-gradient(#1a1a2e, #16213e);}
+  #score {position:absolute; top:10px; left:10px; color:#fff; font-size:18px; font-weight:bold; text-shadow:2px 2px 4px #000;}
 </style>
 </head>
 <body>
-<div id="game">
-  
-  <!-- MENU -->
-  <div id="menu" class="screen">
-    <h1>🔫 BATTLE MASTER PRO</h1>
-    <h2>ULTIMATE EDITION</h2>
-    <button class="btn" onclick="startGame()">START GAME</button>
-    <button class="btn btn2" onclick="showShop()">UPGRADE</button>
-    <button class="btn" onclick="showHelp()">HOW TO PLAY</button>
-  </div>
-
-  <!-- HELP -->
-  <div id="help" class="screen hide">
-    <h1>कैसे खेलें?</h1>
-    <p style="text-align:center;max-width:320px;line-height:28px;font-size:16px">
-      🎯 Tap करके गोली चलाओ<br>
-      👹 लाल Enemy = 1 Hit<br>
-      💜 Boss Level 5 में आएगा<br>
-      💰 Coin Collect = +10 Coins<br>
-      ❤️ Health 0 = Game Over<br>
-      🏆 5 Level Complete = WIN
-    </p>
-    <button class="btn" onclick="backMenu()">BACK</button>
-  </div>
-
-  <!-- SHOP -->
-  <div id="shop" class="screen hide">
-    <h1>UPGRADE SHOP</h1>
-    <h2>Coins: <span id="shopCoins">0</span></h2>
-    <button class="btn" onclick="buyHealth()">+20 Max Health - 50 Coins</button>
-    <button class="btn" onclick="buyDamage()">+1 Gun Damage - 80 Coins</button>
-    <button class="btn btn2" onclick="backMenu()">BACK MENU</button>
-  </div>
-
-  <!-- GAME -->
-  <div id="gameScreen" class="screen hide">
-    <button class="pause-btn" onclick="togglePause()">⏸️</button>
-    <div id="hud">
-      <div class="hud-box">Level<br><span id="level">1</span>/5</div>
-      <div class="hud-box">Health<br><span id="health">100</span>
-        <div class="health-bar"><div class="health-fill" id="healthFill"></div></div>
-      </div>
-      <div class="hud-box">Coins<br><span id="coins">0</span></div>
-      <div class="hud-box">Score<br><span id="score">0</span></div>
-      <div class="hud-box">Kills<br><span id="kills">0</span>/<span id="need">10</span></div>
-    </div>
-    <div class="gun" id="gun"></div>
-    <div id="canvas"></div>
-    <div id="levelText"></div>
-  </div>
-
-  <!-- PAUSE -->
-  <div id="pause" class="screen hide">
-    <h1>PAUSE</h1>
-    <button class="btn" onclick="togglePause()">RESUME</button>
-    <button class="btn btn2" onclick="backMenu()">QUIT</button>
-  </div>
-
-  <!-- GAME OVER -->
-  <div id="gameOver" class="screen hide">
-    <h1>💀 GAME OVER</h1>
-    <h2>Final Score: <span id="finalScore">0</span></h2>
-    <h2>Coins Earned: <span id="finalCoins">0</span></h2>
-    <button class="btn" onclick="startGame()">RESTART</button>
-    <button class="btn btn2" onclick="backMenu()">MENU</button>
-  </div>
-
-  <!-- WIN -->
-  <div id="win" class="screen hide">
-    <h1>🏆 YOU WIN!</h1>
-    <h2>5 Level Complete!</h2>
-    <h2>Final Score: <span id="winScore">0</span></h2>
-    <button class="btn" onclick="startGame()">PLAY AGAIN</button>
-  </div>
-
-</div>
+<div id="score">Score: 0 | Health: 100 | Kills: 0/10</div>
+<canvas id="game"></canvas>
 
 <script>
-let canvas, gun, health=100, maxHealth=100, score=0, coins=0, level=1, bullets=[], enemies=[], gameCoins=[];
-let gameRunning=false, paused=false, gunDamage=1, enemiesKilled=0, enemiesToKill=10;
-let enemySpeed=1.5, spawnRate=1000, totalCoins=0;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-function $(id){return document.getElementById(id)}
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hide'));
-  $(id).classList.remove('hide');
-}
+let car = {x: canvas.width/2-25, y: canvas.height-100, width:50, height:80, speed:8};
+let bullets = [];
+let enemies = [];
+let coins = [];
+let score = 0;
+let health = 100;
+let kills = 0;
+let gameRunning = true;
+let touchX = null;
 
-// Stars background
-for(let i=0;i<50;i++){
-  let s=document.createElement('div');
-  s.className='stars';
-  s.style.left=Math.random()*100+'vw';
-  s.style.top=Math.random()*100+'vh';
-  s.style.animationDelay=Math.random()*3+'s';
-  $('game').appendChild(s);
-}
-
-function startGame(){
-  level=1; health=maxHealth; score=0; coins=0; enemiesKilled=0;
-  bullets=[]; enemies=[]; gameCoins=[]; gameRunning=true; paused=false;
-  enemySpeed=1.5; spawnRate=1000; enemiesToKill=10; gunDamage=1;
-  showScreen('gameScreen');
-  canvas=$('canvas'); gun=$('gun');
-  updateHUD();
-  showLevelText();
-  gameLoop();
-  spawnEnemy();
-}
-
-function showLevelText(){
-  $('levelText').innerText='LEVEL '+level;
-  $('levelText').style.display='block';
-  setTimeout(()=>{$('levelText').style.display='none'},1800);
-}
-
-function backMenu(){
-  gameRunning=false;
-  totalCoins += coins;
-  showScreen('menu');
-}
-function showHelp(){showScreen('help')}
-function showShop(){
-  $('shopCoins').innerText=totalCoins;
-  showScreen('shop');
-}
-function togglePause(){
-  paused=!paused;
-  if(paused) showScreen('pause');
-  else {showScreen('gameScreen'); gameLoop()}
-}
-
-function buyHealth(){
-  if(totalCoins>=50){totalCoins-=50; maxHealth+=20; health=maxHealth; alert('Max Health Upgraded!')}
-  else alert('Coins कम हैं!');
-  showShop();
-}
-function buyDamage(){
-  if(totalCoins>=80){totalCoins-=80; gunDamage++; alert('Gun Damage Upgraded!')}
-  else alert('Coins कम हैं!');
-  showShop();
-}
-
-canvas.onclick = function(e){
-  if(!gameRunning || paused) return;
-  let rect = canvas.getBoundingClientRect();
-  let x = e.clientX - rect.left;
-  createBullet(x);
-}
-
-function createBullet(x){
-  let b = document.createElement('div');
-  b.className='bullet';
-  b.style.left=(window.innerWidth/2-4)+'px';
-  b.style.top=(window.innerHeight-105)+'px';
-  canvas.appendChild(b);
-  bullets.push({el:b, x:window.innerWidth/2, y:window.innerHeight-105});
-}
-
-function spawnEnemy(){
-  if(!gameRunning || paused) return;
-  let isBoss = level==5 && enemiesKilled==enemiesToKill-1;
-  let e = document.createElement('div');
-  e.className = isBoss ? 'enemy boss' : 'enemy';
-  let x = Math.random()*(window.innerWidth-60);
-  e.style.left=x+'px';
-  e.style.top='-60px';
-  canvas.appendChild(e);
-  enemies.push({el:e, x:x, y:-60, hp: isBoss? 30 : level*2 + gunDamage});
-  
-  if(enemiesKilled < enemiesToKill){
-    setTimeout(spawnEnemy, spawnRate);
-  }
-  
-  if(Math.random()<0.5){
-    let c = document.createElement('div');
-    c.className='coin';
-    c.style.left=(x+15)+'px';
-    c.style.top='10px';
-    canvas.appendChild(c);
-    gameCoins.push({el:c, x:x+15, y:10});
-  }
-}
-
-function gameLoop(){
-  if(!gameRunning || paused) return;
-  
-  bullets.forEach((b,i)=>{
-    b.y -= 14;
-    b.el.style.top=b.y+'px';
-    if(b.y<0){b.el.remove(); bullets.splice(i,1)}
-    
-    enemies.forEach((e,j)=>{
-      let size = e.el.classList.contains('boss') ? 100 : 55;
-      if(Math.abs(b.x-e.x-size/2)<size/2+5 && Math.abs(b.y-e.y-size/2)<size/2+5){
-        e.hp-=gunDamage;
-        b.el.remove();
-        bullets.splice(i,1);
-        if(e.hp<=0){
-          createExplosion(e.x+size/2,e.y+size/2);
-          e.el.remove();
-          enemies.splice(j,1);
-          score += isBoss? 200 : 10*level;
-          coins += isBoss? 100 : 5;
-          enemiesKilled++;
-          updateHUD();
-          checkLevelComplete();
-        }
-      }
-    });
-  });
-  
-  enemies.forEach((e,i)=>{
-    let speed = e.el.classList.contains('boss') ? enemySpeed*0.6 : enemySpeed;
-    e.y += speed;
-    e.el.style.top=e.y+'px';
-    if(e.y>window.innerHeight){
-      e.el.remove();
-      enemies.splice(i,1);
-      health -= e.el.classList.contains('boss') ? 30 : 10;
-      updateHUD();
-      if(health<=0) gameOver();
-    }
-  });
-  
-  gameCoins.forEach((c,i)=>{
-    c.y += 2.5;
-    c.el.style.top=c.y+'px';
-    if(c.y>window.innerHeight){c.el.remove(); gameCoins.splice(i,1)}
-    if(Math.abs(c.x-window.innerWidth/2)<45 && Math.abs(c.y-window.innerHeight+60)<45){
-      c.el.remove();
-      gameCoins.splice(i,1);
-      coins += 10;
-      score += 20;
-      updateHUD();
-    }
-  });
-  
-  requestAnimationFrame(gameLoop);
-}
-
-function createExplosion(x,y){
-  let ex = document.createElement('div');
-  ex.className='explosion';
-  ex.style.left=(x-40)+'px';
-  ex.style.top=(y-40)+'px';
-  canvas.appendChild(ex);
-  setTimeout(()=>ex.remove(),400);
-}
-
-function checkLevelComplete(){
-  if(enemiesKilled>=enemiesToKill){
-    gameRunning=false;
-    level++;
-    if(level>5){winGame(); return}
-    enemySpeed += 0.4;
-    spawnRate -= 80;
-    enemiesToKill += 4;
-    enemiesKilled=0;
-    setTimeout(()=>{
-      gameRunning=true;
-      showLevelText();
-      spawnEnemy();
-    },2200);
-  }
-}
-
-function updateHUD(){
-  $('level').innerText=level;
-  $('health').innerText=health;
-  $('healthFill').style.width=(health/maxHealth*100)+'%';
-  $('coins').innerText=coins;
-  $('score').innerText=score;
-  $('kills').innerText=enemiesKilled;
-  $('need').innerText=enemiesToKill;
-}
-
-function gameOver(){
-  gameRunning=false;
-  totalCoins += coins;
-  $('finalScore').innerText=score;
-  $('finalCoins').innerText=coins;
-  showScreen('gameOver');
-}
-
-function winGame(){
-  totalCoins += coins;
-  $('winScore').innerText=score;
-  showScreen('win');
-}
-</script>
-</body>
-</html>
+// Touch Control
+canvas.addEventListener('touchmove', e => {
+  touchX = e.touches[0].clientX;
+});
+canvas.addEventListener('touchend', () => {
