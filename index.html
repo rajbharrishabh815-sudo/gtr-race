@@ -1,144 +1,172 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Web Game</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Car Racing Game</title>
 
 <style>
 body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#111;
-    color:white;
-    text-align:center;
+margin:0;
+overflow:hidden;
+background:#222;
+font-family:Arial;
+text-align:center;
+color:white;
 }
 
-#menu, #gameOver{
-    position:absolute;
-    width:100%;
-    top:50%;
-    transform:translateY(-50%);
+#menu,#gameover{
+position:absolute;
+width:100%;
+top:40%;
 }
 
 button{
-    padding:15px 30px;
-    font-size:20px;
-    cursor:pointer;
-    border:none;
-    border-radius:10px;
+padding:15px 30px;
+font-size:20px;
+border:none;
+border-radius:10px;
+cursor:pointer;
 }
 
 canvas{
-    display:none;
-    background:#222;
-    margin:auto;
-    border:2px solid white;
+display:none;
+background:#555;
 }
 </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1>🎮 My Game</h1>
-    <button onclick="startGame()">START GAME</button>
+<h1>🏎 Car Racing Game</h1>
+<button onclick="startGame()">Start Game</button>
 </div>
 
-<canvas id="gameCanvas" width="400" height="500"></canvas>
+<canvas id="game" width="400" height="700"></canvas>
 
-<div id="gameOver" style="display:none;">
-    <h1>Game Over</h1>
-    <p id="scoreText"></p>
-    <button onclick="location.reload()">Play Again</button>
+<div id="gameover" style="display:none">
+<h1>Game Over</h1>
+<p id="finalScore"></p>
+<button onclick="location.reload()">Play Again</button>
 </div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-let player = {
-    x:180,
-    y:430,
-    w:40,
-    h:40,
-    speed:5
+let score=0;
+let running=false;
+
+const player={
+x:170,
+y:580,
+w:60,
+h:100,
+speed:8
 };
 
-let enemy = {
-    x:Math.random()*360,
-    y:0,
-    w:40,
-    h:40,
-    speed:4
-};
-
-let score = 0;
-let gameRunning = false;
+let enemies=[];
 
 function startGame(){
-    document.getElementById("menu").style.display="none";
-    canvas.style.display="block";
-    gameRunning = true;
-    gameLoop();
+document.getElementById("menu").style.display="none";
+canvas.style.display="block";
+running=true;
+
+setInterval(()=>{
+if(running){
+enemies.push({
+x:[70,170,270][Math.floor(Math.random()*3)],
+y:-120,
+w:60,
+h:100
+});
+}
+},1200);
+
+gameLoop();
 }
 
-document.addEventListener("keydown",(e)=>{
-    if(e.key==="ArrowLeft" && player.x>0)
-        player.x-=player.speed*5;
+document.addEventListener("keydown",e=>{
+if(e.key==="ArrowLeft") player.x-=player.speed*5;
+if(e.key==="ArrowRight") player.x+=player.speed*5;
 
-    if(e.key==="ArrowRight" && player.x<360)
-        player.x+=player.speed*5;
+if(player.x<50) player.x=50;
+if(player.x>290) player.x=290;
 });
 
+function drawRoad(){
+ctx.fillStyle="#666";
+ctx.fillRect(50,0,300,700);
+
+ctx.strokeStyle="white";
+ctx.lineWidth=5;
+
+for(let y=0;y<700;y+=40){
+ctx.beginPath();
+ctx.moveTo(150,y);
+ctx.lineTo(150,y+20);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(250,y);
+ctx.lineTo(250,y+20);
+ctx.stroke();
+}
+}
+
 function drawPlayer(){
-    ctx.fillStyle="lime";
-    ctx.fillRect(player.x,player.y,player.w,player.h);
+ctx.fillStyle="lime";
+ctx.fillRect(player.x,player.y,player.w,player.h);
 }
 
-function drawEnemy(){
-    ctx.fillStyle="red";
-    ctx.fillRect(enemy.x,enemy.y,enemy.w,enemy.h);
+function drawEnemies(){
+ctx.fillStyle="red";
+
+for(let i=0;i<enemies.length;i++){
+let e=enemies[i];
+
+e.y+=6;
+
+ctx.fillRect(e.x,e.y,e.w,e.h);
+
+if(
+player.x<e.x+e.w &&
+player.x+player.w>e.x &&
+player.y<e.y+e.h &&
+player.y+player.h>e.y
+){
+gameOver();
 }
 
-function collision(){
-    return (
-        player.x < enemy.x + enemy.w &&
-        player.x + player.w > enemy.x &&
-        player.y < enemy.y + enemy.h &&
-        player.y + player.h > enemy.y
-    );
+if(e.y>700){
+enemies.splice(i,1);
+score++;
+}
+}
+}
+
+function gameOver(){
+running=false;
+canvas.style.display="none";
+document.getElementById("gameover").style.display="block";
+document.getElementById("finalScore").innerText=
+"Score: "+score;
 }
 
 function gameLoop(){
-    if(!gameRunning) return;
+if(!running) return;
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,400,700);
 
-    enemy.y += enemy.speed;
+drawRoad();
+drawPlayer();
+drawEnemies();
 
-    if(enemy.y > 500){
-        enemy.y = 0;
-        enemy.x = Math.random()*360;
-        score++;
-    }
+ctx.fillStyle="white";
+ctx.font="24px Arial";
+ctx.fillText("Score: "+score,10,30);
 
-    drawPlayer();
-    drawEnemy();
-
-    ctx.fillStyle="white";
-    ctx.font="20px Arial";
-    ctx.fillText("Score: "+score,10,25);
-
-    if(collision()){
-        gameRunning=false;
-        canvas.style.display="none";
-        document.getElementById("gameOver").style.display="block";
-        document.getElementById("scoreText").innerText =
-        "Your Score: " + score;
-        return;
-    }
-
-    requestAnimationFrame(gameLoop);
+requestAnimationFrame(gameLoop);
 }
 </script>
 
