@@ -2,36 +2,145 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>GTR Race</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Web Game</title>
+
 <style>
-  body {margin:0; padding:0; overflow:hidden; background:#000; font-family:Arial;}
-  canvas {display:block; background:linear-gradient(#1a1a2e, #16213e);}
-  #score {position:absolute; top:10px; left:10px; color:#fff; font-size:18px; font-weight:bold; text-shadow:2px 2px 4px #000;}
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#111;
+    color:white;
+    text-align:center;
+}
+
+#menu, #gameOver{
+    position:absolute;
+    width:100%;
+    top:50%;
+    transform:translateY(-50%);
+}
+
+button{
+    padding:15px 30px;
+    font-size:20px;
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+}
+
+canvas{
+    display:none;
+    background:#222;
+    margin:auto;
+    border:2px solid white;
+}
 </style>
 </head>
 <body>
-<div id="score">Score: 0 | Health: 100 | Kills: 0/10</div>
-<canvas id="game"></canvas>
+
+<div id="menu">
+    <h1>🎮 My Game</h1>
+    <button onclick="startGame()">START GAME</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+
+<div id="gameOver" style="display:none;">
+    <h1>Game Over</h1>
+    <p id="scoreText"></p>
+    <button onclick="location.reload()">Play Again</button>
+</div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-let car = {x: canvas.width/2-25, y: canvas.height-100, width:50, height:80, speed:8};
-let bullets = [];
-let enemies = [];
-let coins = [];
+let player = {
+    x:180,
+    y:430,
+    w:40,
+    h:40,
+    speed:5
+};
+
+let enemy = {
+    x:Math.random()*360,
+    y:0,
+    w:40,
+    h:40,
+    speed:4
+};
+
 let score = 0;
-let health = 100;
-let kills = 0;
-let gameRunning = true;
-let touchX = null;
+let gameRunning = false;
 
-// Touch Control
-canvas.addEventListener('touchmove', e => {
-  touchX = e.touches[0].clientX;
+function startGame(){
+    document.getElementById("menu").style.display="none";
+    canvas.style.display="block";
+    gameRunning = true;
+    gameLoop();
+}
+
+document.addEventListener("keydown",(e)=>{
+    if(e.key==="ArrowLeft" && player.x>0)
+        player.x-=player.speed*5;
+
+    if(e.key==="ArrowRight" && player.x<360)
+        player.x+=player.speed*5;
 });
-canvas.addEventListener('touchend', () => {
+
+function drawPlayer(){
+    ctx.fillStyle="lime";
+    ctx.fillRect(player.x,player.y,player.w,player.h);
+}
+
+function drawEnemy(){
+    ctx.fillStyle="red";
+    ctx.fillRect(enemy.x,enemy.y,enemy.w,enemy.h);
+}
+
+function collision(){
+    return (
+        player.x < enemy.x + enemy.w &&
+        player.x + player.w > enemy.x &&
+        player.y < enemy.y + enemy.h &&
+        player.y + player.h > enemy.y
+    );
+}
+
+function gameLoop(){
+    if(!gameRunning) return;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    enemy.y += enemy.speed;
+
+    if(enemy.y > 500){
+        enemy.y = 0;
+        enemy.x = Math.random()*360;
+        score++;
+    }
+
+    drawPlayer();
+    drawEnemy();
+
+    ctx.fillStyle="white";
+    ctx.font="20px Arial";
+    ctx.fillText("Score: "+score,10,25);
+
+    if(collision()){
+        gameRunning=false;
+        canvas.style.display="none";
+        document.getElementById("gameOver").style.display="block";
+        document.getElementById("scoreText").innerText =
+        "Your Score: " + score;
+        return;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>
