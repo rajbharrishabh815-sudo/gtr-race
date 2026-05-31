@@ -23,4 +23,74 @@ function openGame(name){
   document.getElementById("gameArea").innerHTML =
   "Game: " + name;
 }
+</script>.<!DOCTYPE html>
+<html>
+<head>
+<title>Game Hub</title>
+<style>
+body{
+  background:#111;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+
+.game{
+  background:#333;
+  margin:15px;
+  padding:20px;
+  border-radius:10px;
+  font-size:25px;
+}
+</style>
+</head>
+<body>
+
+<h1>🎮 My Game Hub</h1>
+
+<div class="game" onclick="startGame('car')">
+🚗 Car Shooter
+</div>
+
+<div class="game" onclick="startGame('snake')">
+🐍 Snake
+</div>
+
+<div class="game" onclick="startGame('runner')">
+🏃 Runner
+</div>
+
+<div class="game" onclick="startGame('space')">
+🚀 Space Shooter
+</div>
+
+<div id="gameArea"></div>
+
+<script>
+function startGame(game){
+
+if(game==="car"){
+document.getElementById("gameArea").innerHTML=
+"<h2>🚗 Car Game Start</h2>";
+}
+
+if(game==="snake"){
+document.getElementById("gameArea").innerHTML=
+"<h2>🐍 Snake Start</h2>";
+}
+
+if(game==="runner"){
+document.getElementById("gameArea").innerHTML=
+"<h2>🏃 Runner Start</h2>";
+}
+
+if(game==="space"){
+document.getElementById("gameArea").innerHTML=
+"<h2>🚀 Space Shooter Start</h2>";
+}
+
+}
 </script>
+
+</body>
+</html>
