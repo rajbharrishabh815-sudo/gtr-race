@@ -1,34 +1,119 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Star Collector Pro</title>
+<title>Car Racing Game</title>
 <style>
-* { margin:0; padding:0; overflow:hidden; user-select:none; }
-body { background:#000; display:flex; justify-content:center; align-items:center; height:100vh; font-family:'Arial',sans-serif; }
-canvas { border:4px solid #0ff; box-shadow:0 0 30px #0ff; background:linear-gradient(180deg,#000011 0%,#001133 50%,#000022 100%); }
-#ui { position:absolute; top:15px; left:20px; color:#0ff; font-size:20px; font-weight:bold; text-shadow:0 0 10px #0ff; }
-#help { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); color:#aaa; font-size:13px; }
-#menu { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:40px; border:3px solid #0ff; border-radius:15px; text-align:center; color:#0ff; }
-#menu h1 { font-size:40px; margin-bottom:20px; text-shadow:0 0 20px #0ff; }
-#menu button { background:#0ff; color:#000; border:none; padding:12px 30px; font-size:18px; font-weight:bold; border-radius:8px; cursor:pointer; margin:10px; }
-#menu button:hover { background:#fff; box-shadow:0 0 20px #0ff; }
-.hidden { display:none !important; }
+body{
+margin:0;
+overflow:hidden;
+background:#222;
+}
+#game{
+width:600px;
+height:100vh;
+margin:auto;
+background:#555;
+position:relative;
+overflow:hidden;
+}
+.lane{
+position:absolute;
+width:4px;
+height:100%;
+background:white;
+}
+.car{
+width:60px;
+height:100px;
+background:red;
+position:absolute;
+bottom:20px;
+left:270px;
+border-radius:10px;
+}
+.enemy{
+width:60px;
+height:100px;
+background:blue;
+position:absolute;
+border-radius:10px;
+}
 </style>
 </head>
 <body>
-<div id="ui">Score: 0 | Life: 3 | Level: 1 | High: 0</div>
-<div id="help">← → Move | SPACE Jump | P Pause | R Restart</div>
 
-<div id="menu">
-    <h1>⭐ STAR COLLECTOR ⭐</h1>
-    <p style="color:#fff; margin-bottom:20px;">Star लो, Bomb से बचो, High Score बनाओ!</p>
-    <button onclick="startGame()">START GAME</button>
-    <button onclick="showHowTo()">HOW TO PLAY</button>
+<div id="game">
+<div class="lane" style="left:100px"></div>
+<div class="lane" style="left:200px"></div>
+<div class="lane" style="left:300px"></div>
+<div class="lane" style="left:400px"></div>
+<div class="lane" style="left:500px"></div>
+
+<div class="car" id="player"></div>
 </div>
 
-<div id="howto" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:30px;border:3px solid #0ff;border-radius:15px;color:#fff;text-align:left;max-width:400px;">
-    <h2 style="color:#0ff;text-align:center;margin-bottom:15px;">Controls</h2>
-    <p>← → Arrow : Player चलाओ<br>
-    SPACE : Jump करो<br>
-    P : Pause/Resume
+<audio id="beep">
+<source src="https://www.soundjay.com/buttons/sounds/button-16.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const player = document.getElementById("player");
+const game = document.getElementById("game");
+const beep = document.getElementById("beep");
+
+let lane = 2;
+const lanes = [20,120,220,320,420,520];
+
+document.addEventListener("keydown",e=>{
+if(e.key==="ArrowLeft" && lane>0){
+lane--;
+player.style.left=lanes[lane]+"px";
+beep.play();
+}
+if(e.key==="ArrowRight" && lane<5){
+lane++;
+player.style.left=lanes[lane]+"px";
+beep.play();
+}
+});
+
+function createEnemy(){
+let enemy=document.createElement("div");
+enemy.classList.add("enemy");
+
+let randomLane=Math.floor(Math.random()*6);
+enemy.style.left=lanes[randomLane]+"px";
+enemy.style.top="-100px";
+
+game.appendChild(enemy);
+
+let move=setInterval(()=>{
+let top=parseInt(enemy.style.top);
+enemy.style.top=(top+5)+"px";
+
+if(top>window.innerHeight){
+clearInterval(move);
+enemy.remove();
+}
+
+let pRect=player.getBoundingClientRect();
+let eRect=enemy.getBoundingClientRect();
+
+if(
+pRect.left<eRect.right &&
+pRect.right>eRect.left &&
+pRect.top<eRect.bottom &&
+pRect.bottom>eRect.top
+){
+alert("Game Over!");
+location.reload();
+}
+},20);
+}
+
+setInterval(createEnemy,1000);
+</script>
+
+</body>
+</html>
