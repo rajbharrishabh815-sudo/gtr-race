@@ -1,96 +1,34 @@
-<h1>🎮 My Game Hub</h1>
-
-<button onclick="openGame('car')">
-🚗 Car Shooter
-</button>
-
-<button onclick="openGame('space')">
-🚀 Space Shooter
-</button>
-
-<button onclick="openGame('snake')">
-🐍 Snake
-</button>
-
-<button onclick="openGame('runner')">
-🏃 Runner
-</button>
-
-<div id="gameArea"></div>
-
-<script>
-function openGame(name){
-  document.getElementById("gameArea").innerHTML =
-  "Game: " + name;
-}
-</script>.<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="hi">
 <head>
-<title>Game Hub</title>
+<meta charset="UTF-8">
+<title>Star Collector Pro</title>
 <style>
-body{
-  background:#111;
-  color:white;
-  text-align:center;
-  font-family:Arial;
-}
-
-.game{
-  background:#333;
-  margin:15px;
-  padding:20px;
-  border-radius:10px;
-  font-size:25px;
-}
+* { margin:0; padding:0; overflow:hidden; user-select:none; }
+body { background:#000; display:flex; justify-content:center; align-items:center; height:100vh; font-family:'Arial',sans-serif; }
+canvas { border:4px solid #0ff; box-shadow:0 0 30px #0ff; background:linear-gradient(180deg,#000011 0%,#001133 50%,#000022 100%); }
+#ui { position:absolute; top:15px; left:20px; color:#0ff; font-size:20px; font-weight:bold; text-shadow:0 0 10px #0ff; }
+#help { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); color:#aaa; font-size:13px; }
+#menu { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:40px; border:3px solid #0ff; border-radius:15px; text-align:center; color:#0ff; }
+#menu h1 { font-size:40px; margin-bottom:20px; text-shadow:0 0 20px #0ff; }
+#menu button { background:#0ff; color:#000; border:none; padding:12px 30px; font-size:18px; font-weight:bold; border-radius:8px; cursor:pointer; margin:10px; }
+#menu button:hover { background:#fff; box-shadow:0 0 20px #0ff; }
+.hidden { display:none !important; }
 </style>
 </head>
 <body>
+<div id="ui">Score: 0 | Life: 3 | Level: 1 | High: 0</div>
+<div id="help">← → Move | SPACE Jump | P Pause | R Restart</div>
 
-<h1>🎮 My Game Hub</h1>
-
-<div class="game" onclick="startGame('car')">
-🚗 Car Shooter
+<div id="menu">
+    <h1>⭐ STAR COLLECTOR ⭐</h1>
+    <p style="color:#fff; margin-bottom:20px;">Star लो, Bomb से बचो, High Score बनाओ!</p>
+    <button onclick="startGame()">START GAME</button>
+    <button onclick="showHowTo()">HOW TO PLAY</button>
 </div>
 
-<div class="game" onclick="startGame('snake')">
-🐍 Snake
-</div>
-
-<div class="game" onclick="startGame('runner')">
-🏃 Runner
-</div>
-
-<div class="game" onclick="startGame('space')">
-🚀 Space Shooter
-</div>
-
-<div id="gameArea"></div>
-
-<script>
-function startGame(game){
-
-if(game==="car"){
-document.getElementById("gameArea").innerHTML=
-"<h2>🚗 Car Game Start</h2>";
-}
-
-if(game==="snake"){
-document.getElementById("gameArea").innerHTML=
-"<h2>🐍 Snake Start</h2>";
-}
-
-if(game==="runner"){
-document.getElementById("gameArea").innerHTML=
-"<h2>🏃 Runner Start</h2>";
-}
-
-if(game==="space"){
-document.getElementById("gameArea").innerHTML=
-"<h2>🚀 Space Shooter Start</h2>";
-}
-
-}
-</script>
-
-</body>
-</html>
+<div id="howto" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:30px;border:3px solid #0ff;border-radius:15px;color:#fff;text-align:left;max-width:400px;">
+    <h2 style="color:#0ff;text-align:center;margin-bottom:15px;">Controls</h2>
+    <p>← → Arrow : Player चलाओ<br>
+    SPACE : Jump करो<br>
+    P : Pause/Resume
