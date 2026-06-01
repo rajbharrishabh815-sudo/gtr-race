@@ -3,6 +3,363 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pro Car Racing 2D Sound</title>
+<style>
+* { margin:0; padding:0; overflow:hidden; user-select:none; box-sizing:border-box; }
+body { background:#000; display:flex; justify-content:center; align-items:center; height:100vh; font-family:Arial; }
+canvas { border:4px solid #ffcc00; box-shadow:0 0 25px #ffcc00; background:#2a2a2a; border-radius:8px; }
+#ui { position:absolute; top:15px; left:20px; color:#ffcc00; font-size:22px; font-weight:bold; text-shadow:0 0 10px #ffcc00; z-index:10; }
+#speed { position:absolute; top:15px; right:20px; color:#00ffff; font-size:22px; font-weight:bold; text-shadow:0 0 10px #00ffff; }
+#nitro { position:absolute; top:50px; right:20px; color:#ff00ff; font-size:18px; font-weight:bold; }
+#menu { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.95); padding:40px; border:4px solid #ffcc00; border-radius:15px; text-align:center; color:#ffcc00; z-index:100; }
+#menu h1 { font-size:45px; margin-bottom:20px; text-shadow:0 0 20px #ffcc00; animation:glow 2s infinite; }
+@keyframes glow { 0%,100%{text-shadow:0 0 20px #ffcc00;} 50%{text-shadow:0 0 35px #ffcc00;} }
+#menu p { color:#fff; margin-bottom:20px; font-size:16px; }
+#menu button { background:linear-gradient(45deg,#ffcc00,#ffaa00); color:#000; border:none; padding:14px 35px; font-size:20px; font-weight:bold; border-radius:8px; cursor:pointer; margin:10px; transition:0.3s; }
+#menu button:hover { transform:scale(1.1); box-shadow:0 0 25px #ffcc00; background:#fff; }
+.hidden { display:none!important; }
+#help { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); color:#aaa; font-size:14px; background:rgba(0,0,0,0.7); padding:5px 15px; border-radius:10px; }
+</style>
+</head>
+<body>
+<div id="ui">Score: 0 | Life: 3 | Level: 1</div>
+<div id="speed">Speed: 0 KM/H</div>
+<div id="nitro">NITRO: 100%</div>
+<div id="help">← → Move | SPACE Brake | SHIFT Nitro | R Restart</div>
+
+<div id="menu">
+    <h1>🏁 PRO RACING 2D 🏁</h1>
+    <p>Car चलाओ, Sound सुनो, High Score बनाओ!</p>
+    <button type="button" id="startBtn">START RACE</button>
+</div>
+
+<canvas id="game" width="400" height="700"></canvas>
+
+<script>
+// ====== 1. VARIABLES ======
+let canvas = document.getElementById('game');
+let ctx = canvas.getContext('2d');
+let score = 0, lives = 3, level = 1, speed = 0, nitro = 100;
+let gameOver = false, gameStarted = false;
+let keys = {}, audioCtx;
+let cars = [], coins = [], particles = [], roadLines = [];
+let carColors = ['#ff0000','#0000ff','#00ff00','#ff00ff','#ffa500','#00ffff','#ff1493'];
+
+// ====== 2. AUDIO SYSTEM ======
+function initAudio() {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playSound(freq, dur, type='square') {
+    if(!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = freq; osc.type = type;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+    } catch(e) {}
+}
+function engineSound() {
+    if(speed > 1 && Math.random() > 0.7) playSound(120 + speed*4, 0.03, 'sawtooth');
+}
+
+// ====== 3. PLAYER CAR ======
+let player = {
+    x: 180, y: 600, w: 40, h: 70, vx: 0, speed: 5.5, maxSpeed: 9,
+    color: '#ff0000', invincible: 0, blink: 0, nitroActive: false,
+
+    reset() {
+        this.x = 180; this.vx = 0; score = 0; lives = 3; level = 1; speed = 0; nitro = 100;
+        cars = []; coins = []; particles = [];
+    },
+
+    update() {
+        if(gameOver) return;
+
+        if(keys['ArrowLeft'] && this.x > 50) this.vx = -this.speed;
+        else if(keys['ArrowRight'] && this.x < canvas.width-50-this.w) this.vx = this.speed;
+        else this.vx = 0;
+
+        if(keys[' ']) speed = Math.max(0, speed-1.5);
+        else {
+            if(keys['Shift'] && nitro > 0) {
+                this.nitroActive = true;
+                speed = Math.min(this.maxSpeed + 4, speed+0.4);
+                nitro -= 0.6;
+                if(nitro < 0) nitro = 0;
+            } else {
+                this.nitroActive = false;
+                speed = Math.min(this.maxSpeed + level, speed+0.18);
+                if(nitro < 100) nitro += 0.12;
+            }
+        }
+
+        this.x += this.vx;
+        if(this.invincible > 0) this.invincible--;
+        if(this.blink > 0) this.blink--;
+
+        document.getElementById('speed').innerText = `Speed: ${Math.floor(speed*17)} KM/H`;
+        document.getElementById('nitro').innerText = `NITRO: ${Math.floor(nitro)}%`;
+
+        if(this.nitroActive) {
+            createParticles(this.x+3, this.y+this.h, '#00ffff', 3);
+            createParticles(this.x+this.w-3, this.y+this.h, '#00ffff', 3);
+        }
+        engineSound();
+    },
+
+    draw() {
+        if(this.blink % 6 < 3 && this.invincible > 0) return;
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(this.x+3, this.y+3, this.w, this.h);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillStyle = '#88ccff';
+        ctx.fillRect(this.x+5, this.y+10, this.w-10, 20);
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(this.x+5, this.y+this.h-8, 8, 8);
+        ctx.fillRect(this.x+this.w-13, this.y+this.h-8, 8, 8);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(this.x-3, this.y+10, 6, 15);
+        ctx.fillRect(this.x-3, this.y+45, 6, 15);
+        ctx.fillRect(this.x+this.w-3, this.y+10, 6, 15);
+        ctx.fillRect(this.x+this.w-3, this.y+45, 6, 15);
+    },
+
+    crash() {
+        if(this.invincible <= 0) {
+            lives--; this.invincible = 100; this.blink = 100;
+            createParticles(this.x+20, this.y+35, '#ff0000', 30);
+            playSound(70, 0.5, 'sawtooth');
+            speed = 2;
+            if(lives <= 0) endGame();
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        }
+    }
+};
+
+// ====== 4. ENEMY CARS ======
+function createCar() {
+    let lane = Math.floor(Math.random()*3);
+    let x = 50 + lane*100 + 30;
+    cars.push({
+        x: x, y: -80, w: 40, h: 70,
+        vy: 3.5 + speed*0.5 + level*0.3,
+        color: carColors[Math.floor(Math.random()*carColors.length)]
+    });
+}
+function drawEnemyCar(car) {
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(car.x+3, car.y+3, car.w, car.h);
+    ctx.fillStyle = car.color;
+    ctx.fillRect(car.x, car.y, car.w, car.h);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(car.x+5, car.y+car.h-20, car.w-10, 15);
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(car.x+5, car.y+5, 8, 8);
+    ctx.fillRect(car.x+car.w-13, car.y+5, 8, 8);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(car.x-3, car.y+10, 6, 15);
+    ctx.fillRect(car.x-3, car.y+45, 6, 15);
+    ctx.fillRect(car.x+car.w-3, car.y+10, 6, 15);
+    ctx.fillRect(car.x+car.w-3, car.y+45, 6, 15);
+}
+
+// ====== 5. COINS ======
+function createCoin() {
+    let lane = Math.floor(Math.random()*3);
+    let x = 50 + lane*100 + 40;
+    coins.push({ x: x, y: -20, w: 20, h: 20, vy: 3.5 + speed*0.5, rot: 0, pulse: 0 });
+}
+function drawCoin(coin) {
+    coin.pulse += 0.1;
+    let scale = 1 + Math.sin(coin.pulse)*0.1;
+    ctx.save();
+    ctx.translate(coin.x+10, coin.y+10);
+    ctx.scale(scale, scale);
+    ctx.rotate(coin.rot);
+    ctx.shadowColor = '#ff0';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ffcc00';
+    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#aa8800'; ctx.lineWidth=3; ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#000'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('$', 0, 4);
+    ctx.restore();
+}
+
+// ====== 6. ROAD LINES ======
+for(let i=0; i<18; i++) {
+    roadLines.push({ y: i*40 });
+}
+
+// ====== 7. PARTICLES ======
+function createParticles(x, y, color, count=20) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x:x, y:y, vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*7,
+            life:40, maxLife:40, color:color, size:Math.random()*5+3
+        });
+    }
+}
+
+// ====== 8. COLLISION ======
+function checkCollision(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x &&
+           a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// ====== 9. SPAWN SYSTEM ======
+let spawnTimer = 0;
+function spawnObjects() {
+    spawnTimer++;
+    let rate = Math.max(40 - level*3, 15);
+    if(spawnTimer % rate == 0) createCar();
+    if(spawnTimer % (rate+20) == 0) createCoin();
+}
+
+// ====== 10. LEVEL SYSTEM ======
+function checkLevel() {
+    let newLevel = Math.floor(score/50) + 1;
+    if(newLevel > level) {
+        level = newLevel;
+        player.maxSpeed = 9 + level*0.5;
+        playSound(1046, 0.2, 'sine');
+    }
+}
+
+// ====== 11. GAME LOOP ======
+function gameLoop() {
+    if(!gameStarted) return;
+    if(gameOver) { requestAnimationFrame(gameLoop); return; }
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Road
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(50, 0, 300, canvas.height);
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(45, 0, 5, canvas.height);
+    ctx.fillRect(350, 0, 5, canvas.height);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+    ctx.setLineDash([20, 20]);
+    ctx.beginPath(); ctx.moveTo(150, 0); ctx.lineTo(150, canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(250, 0); ctx.lineTo(250, canvas.height); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Road lines
+    roadLines.forEach(line => {
+        line.y += speed*2;
+        if(line.y > canvas.height) line.y = -40;
+        ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(200, line.y); ctx.lineTo(200, line.y+25); ctx.stroke();
+    });
+
+    player.update();
+    player.draw();
+    spawnObjects();
+    checkLevel();
+
+    // Enemy Cars
+    for(let i=cars.length-1; i>=0; i--) {
+        let c = cars[i];
+        c.y += c.vy;
+        drawEnemyCar(c);
+        if(checkCollision(player, c)) {
+            player.crash();
+            cars.splice(i,1);
+        } else if(c.y > canvas.height) {
+            cars.splice(i,1);
+            score += 5;
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        }
+    }
+
+    // Coins
+    for(let i=coins.length-1; i>=0; i--) {
+        let coin = coins[i];
+        coin.y += coin.vy; coin.rot += 0.15;
+        drawCoin(coin);
+        if(checkCollision(player, coin)) {
+            score += 10;
+            if(lives < 5) lives++;
+            createParticles(coin.x+10, coin.y+10, '#ffcc00', 15);
+            playSound(880, 0.1, 'sine');
+            coins.splice(i,1);
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        } else if(coin.y > canvas.height) coins.splice(i,1);
+    }
+
+    // Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life--;
+        let alpha = p.life / p.maxLife;
+        ctx.globalAlpha = alpha; ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size); ctx.globalAlpha = 1;
+        if(p.life <= 0) particles.splice(i,1);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ====== 12. GAME CONTROL ======
+window.startGame = function() {
+    initAudio();
+    document.getElementById('menu').classList.add('hidden');
+    player.reset();
+    gameStarted = true;
+    gameLoop();
+}
+function endGame() {
+    gameOver = true;
+    setTimeout(() => {
+        ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#ff0000'; ctx.font = '48px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('CRASH!', canvas.width/2, canvas.height/2-40);
+        ctx.fillStyle = '#ffcc00'; ctx.font = '28px Arial';
+        ctx.fillText(`Final Score: ${score}`, canvas.width/2, canvas.height/2+20);
+        ctx.font = '20px Arial'; ctx.fillText('R दबाओ Restart के लिए', canvas.width/2, canvas.height/2+60);
+        playSound(100, 0.7);
+    }, 500);
+}
+
+// ====== 13. CONTROLS ======
+document.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if(e.key == ' &&!audioCtx) initAudio();
+    if((e.key == 'r' || e.key == 'R') && gameOver) startGame();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ====== 14. MOBILE TOUCH ======
+canvas.addEventListener('touchstart', e => {
+    if(!audioCtx) initAudio();
+    let x = e.touches[0].clientX;
+    let rect = canvas.getBoundingClientRect();
+    let touchX = x - rect.left;
+    if(touchX < canvas.width/2) keys['ArrowLeft'] = true;
+    else keys['ArrowRight'] = true;
+});
+canvas.addEventListener('touchend', e => {
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+});
+
+// ====== 15. BUTTON CLICK ======
+document.getElementById('startBtn').addEventListener('click', function() {
+    startGame();
+});
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>GTR Racing Pro 2D</title>
 <style>
 /* ================== CSS SECTION 1 ================== */
