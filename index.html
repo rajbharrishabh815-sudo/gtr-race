@@ -1,119 +1,318 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<title>Car Racing Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTR Car Racing 2D</title>
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:#222;
-}
-#game{
-width:600px;
-height:100vh;
-margin:auto;
-background:#555;
-position:relative;
-overflow:hidden;
-}
-.lane{
-position:absolute;
-width:4px;
-height:100%;
-background:white;
-}
-.car{
-width:60px;
-height:100px;
-background:red;
-position:absolute;
-bottom:20px;
-left:270px;
-border-radius:10px;
-}
-.enemy{
-width:60px;
-height:100px;
-background:blue;
-position:absolute;
-border-radius:10px;
-}
+* { margin:0; padding:0; overflow:hidden; user-select:none; }
+body { background:#111; display:flex; justify-content:center; align-items:center; height:100vh; font-family:Arial; }
+canvas { border:4px solid #ff0; box-shadow:0 0 30px #ff0; background:#333; }
+#ui { position:absolute; top:15px; left:20px; color:#ff0; font-size:22px; font-weight:bold; text-shadow:0 0 10px #ff0; }
+#speed { position:absolute; top:15px; right:20px; color:#0ff; font-size:22px; font-weight:bold; }
+#menu { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.95); padding:40px; border:4px solid #ff0; border-radius:15px; text-align:center; color:#ff0; }
+#menu h1 { font-size:45px; margin-bottom:20px; text-shadow:0 0 20px #ff0; }
+#menu button { background:#ff0; color:#000; border:none; padding:14px 35px; font-size:20px; font-weight:bold; border-radius:8px; cursor:pointer; margin:10px; }
+#menu button:hover { background:#fff; box-shadow:0 0 25px #ff0; }
+.hidden { display:none!important; }
+#help { position:absolute; bottom:15px; left:50%; transform:translateX(-50%); color:#aaa; font-size:14px; }
 </style>
 </head>
 <body>
+<div id="ui">Score: 0 | Life: 3 | Level: 1</div>
+<div id="speed">Speed: 0 KM/H</div>
+<div id="help">← → Move | SPACE Brake | R Restart</div>
 
-<div id="game">
-<div class="lane" style="left:100px"></div>
-<div class="lane" style="left:200px"></div>
-<div class="lane" style="left:300px"></div>
-<div class="lane" style="left:400px"></div>
-<div class="lane" style="left:500px"></div>
-
-<div class="car" id="player"></div>
+<div id="menu">
+    <h1>🏁 GTR RACING 2D 🏁</h1>
+    <p style="color:#fff; margin-bottom:20px;">Car चलाओ, Accident से बचो, High Score बनाओ!</p>
+    <button onclick="startGame()">START RACE</button>
 </div>
 
-<audio id="beep">
-<source src="https://www.soundjay.com/buttons/sounds/button-16.mp3" type="audio/mpeg">
-</audio>
+<canvas id="game" width="400" height="700"></canvas>
 
 <script>
-const player = document.getElementById("player");
-const game = document.getElementById("game");
-const beep = document.getElementById("beep");
+// ========== 1. GAME SETUP ==========
+let canvas = document.getElementById('game');
+let ctx = canvas.getContext('2d');
+let score = 0, lives = 3, level = 1, speed = 0;
+let gameOver = false, gameStarted = false;
+let keys = {}, audioCtx;
+let cars = [], coins = [], particles = [], roadLines = [];
 
-let lane = 2;
-const lanes = [20,120,220,320,420,520];
+// ========== 2. SOUND SYSTEM ==========
+function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playSound(freq, dur, type='square') {
+    if(!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = freq; osc.type = type;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+    } catch(e) {}
+}
+function engineSound() { if(speed > 0 && Math.random() > 0.7) playSound(100 + speed*2, 0.05, 'sawtooth'); }
 
-document.addEventListener("keydown",e=>{
-if(e.key==="ArrowLeft" && lane>0){
-lane--;
-player.style.left=lanes[lane]+"px";
-beep.play();
+// ========== 3. PLAYER CAR ==========
+let player = {
+    x: 180, y: 600, w: 40, h: 70, vx: 0, speed: 5, maxSpeed: 8,
+    color: '#ff0000', invincible: 0, blink: 0,
+
+    reset() {
+        this.x = 180; this.vx = 0; score = 0; lives = 3; level = 1; speed = 0;
+        cars = []; coins = []; particles = [];
+    },
+
+    update() {
+        if(gameOver) return;
+        if(keys['ArrowLeft'] && this.x > 50) this.vx = -this.speed;
+        else if(keys['ArrowRight'] && this.x < canvas.width-50-this.w) this.vx = this.speed;
+        else this.vx = 0;
+
+        if(keys[' ']) speed = Math.max(0, speed-1); // Brake
+        else speed = Math.min(this.maxSpeed + level, speed+0.2); // Accelerate
+
+        this.x += this.vx;
+        if(this.invincible > 0) this.invincible--;
+        if(this.blink > 0) this.blink--;
+
+        document.getElementById('speed').innerText = `Speed: ${Math.floor(speed*15)} KM/H`;
+        engineSound();
+    },
+
+    draw() {
+        if(this.blink % 6 < 3 && this.invincible > 0) return;
+        // Car Body
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        // Windshield
+        ctx.fillStyle = '#88ccff';
+        ctx.fillRect(this.x+5, this.y+10, this.w-10, 20);
+        // Lights
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(this.x+5, this.y+this.h-8, 8, 8);
+        ctx.fillRect(this.x+this.w-13, this.y+this.h-8, 8, 8);
+        // Wheels
+        ctx.fillStyle = '#000';
+        ctx.fillRect(this.x-3, this.y+10, 6, 15);
+        ctx.fillRect(this.x-3, this.y+45, 6, 15);
+        ctx.fillRect(this.x+this.w-3, this.y+10, 6, 15);
+        ctx.fillRect(this.x+this.w-3, this.y+45, 6, 15);
+    },
+
+    crash() {
+        if(this.invincible <= 0) {
+            lives--; this.invincible = 90; this.blink = 90;
+            createParticles(this.x+20, this.y+35, '#ff0000', 30);
+            playSound(80, 0.5, 'sawtooth');
+            if(lives <= 0) endGame();
+        }
+    }
+};
+
+// ========== 4. ENEMY CARS ==========
+function createCar() {
+    let lane = Math.floor(Math.random()*3);
+    let x = 50 + lane*100 + 30;
+    let colors = ['#0000ff', '#00ff00', '#ff00ff', '#ffa500'];
+    cars.push({
+        x: x, y: -80, w: 40, h: 70,
+        vy: 3 + speed*0.5 + level*0.3,
+        color: colors[Math.floor(Math.random()*colors.length)]
+    });
 }
-if(e.key==="ArrowRight" && lane<5){
-lane++;
-player.style.left=lanes[lane]+"px";
-beep.play();
+
+// ========== 5. COINS ==========
+function createCoin() {
+    let lane = Math.floor(Math.random()*3);
+    let x = 50 + lane*100 + 40;
+    coins.push({ x: x, y: -20, w: 20, h: 20, vy: 3 + speed*0.5, rot: 0 });
 }
+
+// ========== 6. ROAD LINES ==========
+for(let i=0; i<15; i++) {
+    roadLines.push({ y: i*50 });
+}
+
+// ========== 7. PARTICLES ==========
+function createParticles(x, y, color, count=20) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x:x, y:y, vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*7,
+            life:40, maxLife:40, color:color, size:Math.random()*5+3
+        });
+    }
+}
+
+// ========== 8. DRAW ENEMY CAR ==========
+function drawEnemyCar(car) {
+    ctx.fillStyle = car.color;
+    ctx.fillRect(car.x, car.y, car.w, car.h);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(car.x+5, car.y+this.h-20, car.w-10, 15); // Back glass
+    ctx.fillStyle = '#000';
+    ctx.fillRect(car.x-3, car.y+10, 6, 15);
+    ctx.fillRect(car.x-3, car.y+45, 6, 15);
+    ctx.fillRect(car.x+car.w-3, car.y+10, 6, 15);
+    ctx.fillRect(car.x+car.w-3, car.y+45, 6, 15);
+}
+
+// ========== 9. DRAW COIN ==========
+function drawCoin(coin) {
+    ctx.save();
+    ctx.translate(coin.x+10, coin.y+10);
+    ctx.rotate(coin.rot);
+    ctx.fillStyle = '#ff0';
+    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#aa0'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle = '#000'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('$', 0, 4);
+    ctx.restore();
+}
+
+// ========== 10. COLLISION ==========
+function checkCollision(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x &&
+           a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// ========== 11. SPAWN SYSTEM ==========
+let spawnTimer = 0;
+function spawnObjects() {
+    spawnTimer++;
+    let rate = Math.max(40 - level*3, 15);
+    if(spawnTimer % rate == 0) createCar();
+    if(spawnTimer % (rate+20) == 0) createCoin();
+}
+
+// ========== 12. LEVEL SYSTEM ==========
+function checkLevel() {
+    let newLevel = Math.floor(score/50) + 1;
+    if(newLevel > level) {
+        level = newLevel;
+        player.maxSpeed = 8 + level*0.5;
+        playSound(1046, 0.2);
+    }
+}
+
+// ========== 13. GAME LOOP ==========
+function gameLoop() {
+    if(!gameStarted) return;
+    if(gameOver) { requestAnimationFrame(gameLoop); return; }
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Road
+    ctx.fillStyle = '#444';
+    ctx.fillRect(50, 0, 300, canvas.height);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+    ctx.setLineDash([20, 20]);
+    ctx.beginPath(); ctx.moveTo(150, 0); ctx.lineTo(150, canvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(250, 0); ctx.lineTo(250, canvas.height); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Road lines animation
+    roadLines.forEach(line => {
+        line.y += speed*2;
+        if(line.y > canvas.height) line.y = -50;
+        ctx.strokeStyle = '#ff0'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(200, line.y); ctx.lineTo(200, line.y+30); ctx.stroke();
+    });
+
+    player.update();
+    player.draw();
+    spawnObjects();
+    checkLevel();
+
+    // Update Enemy Cars
+    for(let i=cars.length-1; i>=0; i--) {
+        let c = cars[i];
+        c.y += c.vy;
+        drawEnemyCar(c);
+        if(checkCollision(player, c)) {
+            player.crash();
+            cars.splice(i,1);
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        } else if(c.y > canvas.height) {
+            cars.splice(i,1);
+            score += 5;
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        }
+    }
+
+    // Update Coins
+    for(let i=coins.length-1; i>=0; i--) {
+        let coin = coins[i];
+        coin.y += coin.vy; coin.rot += 0.15;
+        drawCoin(coin);
+        if(checkCollision(player, coin)) {
+            score += 10;
+            if(lives < 5) lives++;
+            createParticles(coin.x+10, coin.y+10, '#ff0', 15);
+            playSound(880, 0.1, 'sine');
+            coins.splice(i,1);
+            document.getElementById('ui').innerText = `Score: ${score} | Life: ${lives} | Level: ${level}`;
+        } else if(coin.y > canvas.height) coins.splice(i,1);
+    }
+
+    // Update Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life--;
+        let alpha = p.life / p.maxLife;
+        ctx.globalAlpha = alpha; ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size); ctx.globalAlpha = 1;
+        if(p.life <= 0) particles.splice(i,1);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ========== 14. GAME CONTROL ==========
+function startGame() {
+    initAudio();
+    document.getElementById('menu').classList.add('hidden');
+    player.reset();
+    gameStarted = true;
+    gameLoop();
+}
+
+function endGame() {
+    gameOver = true;
+    setTimeout(() => {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#ff0000'; ctx.font = '48px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('CRASH!', canvas.width/2, canvas.height/2-40);
+        ctx.fillStyle = '#ff0'; ctx.font = '28px Arial';
+        ctx.fillText(`Final Score: ${score}`, canvas.width/2, canvas.height/2+20);
+        ctx.font = '20px Arial'; ctx.fillText('R दबाओ Restart के लिए', canvas.width/2, canvas.height/2+60);
+    }, 500);
+}
+
+// ========== 15. CONTROLS ==========
+document.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if(e.key == ' &&!audioCtx) initAudio();
+    if((e.key == 'r' || e.key == 'R') && gameOver) startGame();
 });
+document.addEventListener('keyup', e => { keys[e.key] = false; });
 
-function createEnemy(){
-let enemy=document.createElement("div");
-enemy.classList.add("enemy");
-
-let randomLane=Math.floor(Math.random()*6);
-enemy.style.left=lanes[randomLane]+"px";
-enemy.style.top="-100px";
-
-game.appendChild(enemy);
-
-let move=setInterval(()=>{
-let top=parseInt(enemy.style.top);
-enemy.style.top=(top+5)+"px";
-
-if(top>window.innerHeight){
-clearInterval(move);
-enemy.remove();
-}
-
-let pRect=player.getBoundingClientRect();
-let eRect=enemy.getBoundingClientRect();
-
-if(
-pRect.left<eRect.right &&
-pRect.right>eRect.left &&
-pRect.top<eRect.bottom &&
-pRect.bottom>eRect.top
-){
-alert("Game Over!");
-location.reload();
-}
-},20);
-}
-
-setInterval(createEnemy,1000);
+// ========== 16. MOBILE CONTROLS ==========
+canvas.addEventListener('touchstart', e => {
+    if(!audioCtx) initAudio();
+    let x = e.touches[0].clientX;
+    let rect = canvas.getBoundingClientRect();
+    let touchX = x - rect.left;
+    if(touchX < canvas.width/2) keys['ArrowLeft'] = true;
+    else keys['ArrowRight'] = true;
+});
+canvas.addEventListener('touchend', e => {
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+});
 </script>
-
 </body>
 </html>
