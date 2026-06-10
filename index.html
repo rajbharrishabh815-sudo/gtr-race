@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Hub</title>
 
+<style>
+body{
+    background:#222;
+    color:white;
+    font-family:Arial,sans-serif;
+    text-align:center;
+    margin:0;
+    padding:20px;
+}
+
+button{
+    padding:12px 20px;
+    margin:5px;
+    font-size:18px;
+    cursor:pointer;
+}
+
+.game{
+    display:none;
+    margin-top:20px;
+}
+
+input{
+    padding:10px;
+    font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 My Game Hub</h1>
+
+<div>
+<button onclick="showGame('g1')">Snake</button>
+<button onclick="showGame('g2')">Click Game</button>
+<button onclick="showGame('g3')">Guess Number</button>
+<button onclick="showGame('g4')">Rock Paper Scissors</button>
+<button onclick="showGame('g5')">Coming Soon</button>
+</div>
+
+<div id="g1" class="game">
+<h2>🐍 Snake Game</h2>
+<p>Snake Game Placeholder</p>
+</div>
+
+<div id="g2" class="game">
+<h2>🖱 Click Game</h2>
+<button onclick="addScore()">Click Me</button>
+<p>Score: <span id="score">0</span></p>
+</div>
+
+<div id="g3" class="game">
+<h2>🎯 Guess Number</h2>
+<input type="number" id="guess">
+<button onclick="checkGuess()">Check</button>
+<p id="result"></p>
+</div>
+
+<div id="g4" class="game">
+<h2>✂️ Rock Paper Scissors</h2>
+
+<button onclick="rps('Rock')">Rock</button>
+<button onclick="rps('Paper')">Paper</button>
+<button onclick="rps('Scissors')">Scissors</button>
+
+<p id="rpsResult"></p>
+</div>
+
+<div id="g5" class="game">
+<h2>🚀 Coming Soon</h2>
+<p>नया गेम जल्द आएगा।</p>
+</div>
+
+<script>
+
+function showGame(id){
+    let games=document.querySelectorAll('.game');
+
+    games.forEach(function(game){
+        game.style.display='none';
+    });
+
+    document.getElementById(id).style.display='block';
+}
+
+let score=0;
+
+function addScore(){
+    score++;
+    document.getElementById("score").innerText=score;
+}
+
+let secret=Math.floor(Math.random()*10)+1;
+
+function checkGuess(){
+
+    let g=parseInt(document.getElementById("guess").value);
+
+    if(g===secret){
+        document.getElementById("result").innerText="🎉 सही जवाब!";
+    }else{
+        document.getElementById("result").innerText="❌ गलत, फिर कोशिश करें";
+    }
+}
+
+function rps(user){
+
+    let options=["Rock","Paper","Scissors"];
+
+    let cpu=options[Math.floor(Math.random()*3)];
+
+    let text="आप: "+user+" | कंप्यूटर: "+cpu;
+
+    if(user===cpu){
+        text+=" | Draw";
+    }
+    else if(
+        (user==="Rock" && cpu==="Scissors") ||
+        (user==="Paper" && cpu==="Rock") ||
+        (user==="Scissors" && cpu==="Paper")
+    ){
+        text+=" | 🎉 आप जीते";
+    }
+    else{
+        text+=" | 😢 कंप्यूटर जीता";
+    }
+
+    document.getElementById("rpsResult").innerText=text;
+}
+
+</script>
+
+</body>
+</html>
