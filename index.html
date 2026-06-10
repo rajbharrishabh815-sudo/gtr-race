@@ -19,11 +19,11 @@ function openGame(game){
   document.getElementById('menu').style.display='none';
   document.querySelectorAll('.game').forEach(g=>g.style.display='none');
   document.getElementById(game).style.display='block';
-  if(game=='clicker') startClicker();
-  if(game=='reaction') startReaction();
-}
-function backMenu(){
-  document.querySelectorAll('.game').forEach(g=>g.style.display='none');
+  if(<div class="card" onclick="openGame('guess')">🎲<br>Game 1<br>Number Guess</div>
+<div class="card" onclick="openGame('rps')">✊<br>Game 2<br>Rock Paper Scissors</div>
+<div class="card" onclick="openGame('clicker')">🎯<br>Game 3<br>Click Speed</div>
+<div class="card" onclick="openGame('reaction')">⚡<br>Game 4<br>Reaction Test</div>
+<div class="card" onclick="openGame('aim')">🎯<br>Game 5<br>Aim Trainer</div>
   document.getElementById('menu').style.display='grid';
 }
 let secret=Math.floor(Math.random()*100)+1;
