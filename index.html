@@ -83,4 +83,7 @@ function clickReaction(){if(!start){alert('Too early!');clearTimeout(to);backMen
 
 let hits=0,time=15,t2,sp;
 function startAim(){hits=0;time=15;document.getElementById('hits').innerText=0;document.getElementById('time').innerText=15;spawn();sp=setInterval(spawn,800);t2=setInterval(()=>{time--;document.getElementById('time').innerText=time;if(time<=0){clearInterval(t2);clearInterval(sp);alert('Hits: '+hits);backMenu()}},1000)}
-function spawn(){let
+function spawn(){let b=document.getElementById('gameBox');let t=document.createElement('div');t.style.position='absolute';t.style.width='50px';t.style.height='50px';t.style.background='#ff0040';t.style.borderRadius='50%';t.style.cursor='pointer';t.style.left=Math.random()*90+'%';t.style.top=Math.random()*90+'%';t.onclick=()=>{hits++;document.getElementById('hits').innerText=hits;t.remove();spawn()};b.appendChild(t);setTimeout(()=>t.remove(),1000)}
+</script>
+</body>
+</html>
