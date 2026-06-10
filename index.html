@@ -14,6 +14,38 @@ h1{color:#ff0040;font-size:2.5rem;margin:30px 0}
 button{background:#ff0040;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:1rem;cursor:pointer;margin:10px}
 input{padding:12px;border-radius:8px;border:none;margin:5px}
 </style>
+  <script>
+function openGame(game){
+  document.getElementById('menu').style.display='none';
+  document.querySelectorAll('.game').forEach(g=>g.style.display='none');
+  document.getElementById(game).style.display='block';
+  if(game=='clicker') startClicker();
+  if(game=='reaction') startReaction();
+}
+function backMenu(){
+  document.querySelectorAll('.game').forEach(g=>g.style.display='none');
+  document.getElementById('menu').style.display='grid';
+}
+let secret=Math.floor(Math.random()*100)+1;
+function checkGuess(){
+  let g=parseInt(document.getElementById("guessInput").value);
+  document.getElementById("result").innerText = g===secret ? "🎉 सही!" : g<secret ? "⬆️ बड़ा try करो" : "⬇️ छोटा try करो";
+}
+function rps(user){
+  let cpu=["Rock","Paper","Scissors"][Math.floor(Math.random()*3)];
+  let t="आप: "+user+" | CPU: "+cpu;
+  t += user===cpu ? " | Draw" : (user=="Rock"&&cpu=="Scissors")||(user=="Paper"&&cpu=="Rock")||(user=="Scissors"&&cpu=="Paper") ? " | 🎉 जीते" : " | 😢 हारे";
+  document.getElementById("rpsResult").innerText=t;
+}
+let clicks=0,timer=10,ci;
+function startClicker(){clicks=0;timer=10;document.getElementById('score').innerText=0;ci=setInterval(()=>{timer--;if(timer<=0){clearInterval(ci);alert('Score: '+clicks);backMenu()}},1000)}
+function clickMe(){if(timer>0){clicks++;document.getElementById('score').innerText=clicks}}
+let start,to;
+function startReaction(){document.getElementById('msg').innerText='Wait...';document.getElementById('reactionBox').style.background='#333';to=setTimeout(()=>{document.getElementById('reactionBox').style.background='green';document.getElementById('msg').innerText='CLICK NOW!';start=Date.now()},2000+Math.random()*3000)}
+function clickReaction(){if(!start){alert('Too early!');clearTimeout(to);backMenu();return}alert('Time: '+(Date.now()-start)+'ms');backMenu()}
+</script>
+</body>
+</html>
 </head>
 <body>
 <h1>🏁 GTR Games Hub 🏁</h1>
