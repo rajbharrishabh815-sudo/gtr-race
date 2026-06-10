@@ -1,142 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Hub</title>
-
+<title>GTR Games Hub</title>
 <style>
-body{
-    background:#222;
-    color:white;
-    font-family:Arial,sans-serif;
-    text-align:center;
-    margin:0;
-    padding:20px;
-}
-
-button{
-    padding:12px 20px;
-    margin:5px;
-    font-size:18px;
-    cursor:pointer;
-}
-
-.game{
-    display:none;
-    margin-top:20px;
-}
-
-input{
-    padding:10px;
-    font-size:18px;
-}
+body{background:#0a0a0a;color:#fff;font-family:Arial;text-align:center;padding:20px}
+h1{color:#ff0040;font-size:2.5rem;margin:30px 0}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;max-width:600px;margin:40px auto}
+.card{background:#1a1a2e;border:2px solid #ff0040;padding:30px;border-radius:12px;cursor:pointer}
+.card:hover{transform:scale(1.05);box-shadow:0 0 30px #ff0040}
+.game{display:none}
+button{background:#ff0040;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:1rem;cursor:pointer;margin:10px}
+input{padding:12px;border-radius:8px;border:none;margin:5px}
 </style>
 </head>
-
 <body>
+<h1>🏁 GTR Games Hub 🏁</h1>
 
-<h1>🎮 My Game Hub</h1>
-
-<div>
-<button onclick="showGame('g1')">Snake</button>
-<button onclick="showGame('g2')">Click Game</button>
-<button onclick="showGame('g3')">Guess Number</button>
-<button onclick="showGame('g4')">Rock Paper Scissors</button>
-<button onclick="showGame('g5')">Coming Soon</button>
+<div class="menu" id="menu">
+  <div class="card" onclick="openGame('guess')"><h2>🔢 Game 1</h2><p>Number Guess</p></div>
+  <div class="card" onclick="openGame('rps')"><h2>✊ Game 2</h2><p>Rock Paper Scissors</p></div>
+  <div class="card" onclick="openGame('clicker')"><h2>🎯 Game 3</h2><p>Click Speed</p></div>
+  <div class="card" onclick="openGame('reaction')"><h2>⚡ Game 4</h2><p>Reaction Test</p></div>
+  <div class="card" onclick="openGame('aim')"><h2>🎯 Game 5</h2><p>Aim Trainer</p></div>
 </div>
 
-<div id="g1" class="game">
-<h2>🐍 Snake Game</h2>
-<p>Snake Game Placeholder</p>
+<div class="game" id="guess">
+  <h2>Number Guess 1-100</h2>
+  <input type="number" id="guessInput">
+  <button onclick="checkGuess()">Check</button>
+  <p id="result"></p>
+  <button onclick="backMenu()">Menu</button>
 </div>
 
-<div id="g2" class="game">
-<h2>🖱 Click Game</h2>
-<button onclick="addScore()">Click Me</button>
-<p>Score: <span id="score">0</span></p>
+<div class="game" id="rps">
+  <h2>Rock Paper Scissors</h2>
+  <button onclick="rps('Rock')">✊</button>
+  <button onclick="rps('Paper')">✋</button>
+  <button onclick="rps('Scissors')">✌️</button>
+  <p id="rpsResult"></p>
+  <button onclick="backMenu()">Menu</button>
 </div>
 
-<div id="g3" class="game">
-<h2>🎯 Guess Number</h2>
-<input type="number" id="guess">
-<button onclick="checkGuess()">Check</button>
-<p id="result"></p>
+<div class="game" id="clicker">
+  <h2>Click Speed 10s</h2>
+  <h3>Score: <span id="score">0</span></h3>
+  <button onclick="clickMe()" style="width:180px;height:180px;border-radius:50%;font-size:1.5rem">CLICK!</button>
+  <br><button onclick="backMenu()">Menu</button>
 </div>
 
-<div id="g4" class="game">
-<h2>✂️ Rock Paper Scissors</h2>
-
-<button onclick="rps('Rock')">Rock</button>
-<button onclick="rps('Paper')">Paper</button>
-<button onclick="rps('Scissors')">Scissors</button>
-
-<p id="rpsResult"></p>
+<div class="game" id="reaction">
+  <h2>Reaction Test</h2>
+  <p id="msg">Wait for GREEN</p>
+  <div id="box" onclick="clickReaction()" style="width:250px;height:250px;margin:20px auto;background:#333;border-radius:15px;display:flex;align-items:center;justify-content:center;border:3px solid #ff0040;cursor:pointer">Wait</div>
+  <button onclick="backMenu()">Menu</button>
 </div>
 
-<div id="g5" class="game">
-<h2>🚀 Coming Soon</h2>
-<p>नया गेम जल्द आएगा।</p>
+<div class="game" id="aim">
+  <h2>Aim Trainer 15s</h2>
+  <p>Hits: <span id="hits">0</span> | Time: <span id="time">15</span>s</p>
+  <div id="gameBox" style="width:100%;height:350px;background:#222;position:relative;border-radius:10px;max-width:500px;margin:auto"></div>
+  <button onclick="backMenu()">Menu</button>
 </div>
 
 <script>
+function openGame(g){document.getElementById('menu').style.display='none';document.querySelectorAll('.game').forEach(x=>x.style.display='none');document.getElementById(g).style.display='block';if(g=='clicker')startClicker();if(g=='reaction')startReaction();if(g=='aim')startAim()}
+function backMenu(){document.querySelectorAll('.game').forEach(x=>x.style.display='none');document.getElementById('menu').style.display='grid'}
 
-function showGame(id){
-    let games=document.querySelectorAll('.game');
+let secret=Math.floor(Math.random()*100)+1;
+function checkGuess(){let g=parseInt(document.getElementById("guessInput").value);document.getElementById("result").innerText=g===secret?"🎉 सही!":"❌ गलत, फिर try करो"}
 
-    games.forEach(function(game){
-        game.style.display='none';
-    });
+function rps(u){let c=["Rock","Paper","Scissors"][Math.floor(Math.random()*3)];let t="आप: "+u+" | CPU: "+c;if(u===c)t+=" | Draw";else if((u=="Rock"&&c=="Scissors")||(u=="Paper"&&c=="Rock")||(u=="Scissors"&&c=="Paper"))t+=" | 🎉 जीते";else t+=" | 😢 हारे";document.getElementById("rpsResult").innerText=t}
 
-    document.getElementById(id).style.display='block';
-}
+let clicks=0,timer=10,ci;
+function startClicker(){clicks=0;timer=10;document.getElementById('score').innerText=0;ci=setInterval(()=>{timer--;if(timer<=0){clearInterval(ci);alert('Score: '+clicks);backMenu()}},1000)}
+function clickMe(){if(timer>0){clicks++;document.getElementById('score').innerText=clicks}}
 
-let score=0;
+let start,to;
+function startReaction(){document.getElementById('msg').innerText='Wait...';document.getElementById('box').style.background='#333';to=setTimeout(()=>{document.getElementById('box').style.background='green';document.getElementById('msg').innerText='CLICK NOW!';start=Date.now()},2000+Math.random()*3000)}
+function clickReaction(){if(!start){alert('Too early!');clearTimeout(to);backMenu();return}alert('Time: '+(Date.now()-start)+'ms');backMenu()}
 
-function addScore(){
-    score++;
-    document.getElementById("score").innerText=score;
-}
-
-let secret=Math.floor(Math.random()*10)+1;
-
-function checkGuess(){
-
-    let g=parseInt(document.getElementById("guess").value);
-
-    if(g===secret){
-        document.getElementById("result").innerText="🎉 सही जवाब!";
-    }else{
-        document.getElementById("result").innerText="❌ गलत, फिर कोशिश करें";
-    }
-}
-
-function rps(user){
-
-    let options=["Rock","Paper","Scissors"];
-
-    let cpu=options[Math.floor(Math.random()*3)];
-
-    let text="आप: "+user+" | कंप्यूटर: "+cpu;
-
-    if(user===cpu){
-        text+=" | Draw";
-    }
-    else if(
-        (user==="Rock" && cpu==="Scissors") ||
-        (user==="Paper" && cpu==="Rock") ||
-        (user==="Scissors" && cpu==="Paper")
-    ){
-        text+=" | 🎉 आप जीते";
-    }
-    else{
-        text+=" | 😢 कंप्यूटर जीता";
-    }
-
-    document.getElementById("rpsResult").innerText=text;
-}
-
-</script>
-
-</body>
-</html>
+let hits=0,time=15,t2,sp;
+function startAim(){hits=0;time=15;document.getElementById('hits').innerText=0;document.getElementById('time').innerText=15;spawn();sp=setInterval(spawn,800);t2=setInterval(()=>{time--;document.getElementById('time').innerText=time;if(time<=0){clearInterval(t2);clearInterval(sp);alert('Hits: '+hits);backMenu()}},1000)}
+function spawn(){let
